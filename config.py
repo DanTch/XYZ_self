@@ -1,5 +1,5 @@
 # تنظیمات اصلی ربات
-BOT_TOKEN = "7585784009:AAH3Qv-_qucK0Xp3eSbM3x-Kx2Q5K4bSnvs"
+BOT_TOKEN = "7819528896:AAHShU49qF-MqddAd2U8_41CiONL6zSPfDI"
 ADMIN_ID = 6270301002  # آیدی عددی ادمین
 
 # مسیر فایل عکس استارت

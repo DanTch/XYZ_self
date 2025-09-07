@@ -57,7 +57,7 @@ async def main():
                 CUSTOM_POINTS: [MessageHandler(filters.TEXT & ~filters.COMMAND, custom_points_handler)]
             },
             fallbacks=[CommandHandler('cancel', cancel_handler)],
-            per_message=False  # اضافه شد برای رفع هشدار
+            per_message=True  # تغییر یافت به True
         )
         app.add_handler(conv_handler)
         
