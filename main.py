@@ -26,13 +26,13 @@ async def main():
         db = Database()
         
         # ایجاد application با persistence
-        persistence = PicklePersistence(filepath='bot_data')  # این خط اصلاح شده است
+        persistence = PicklePersistence(filepath='bot_data')
         app = Application.builder().token(BOT_TOKEN).persistence(persistence).build()
         
         # دستورات اصلی
         app.add_handler(CommandHandler("start", start))
         app.add_handler(CommandHandler("admin", admin_panel))
-        app.add_handler(CommandHandler("add_points", add_points_command, pass_args=True))
+        app.add_handler(CommandHandler("add_points", add_points_command))  # اصلاح شد: pass_args حذف شد
         
         # کالبک‌های اصلی
         app.add_handler(CallbackQueryHandler(vip_handler, pattern='^(what_is_self|buy_vip)$'))
