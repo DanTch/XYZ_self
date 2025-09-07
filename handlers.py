@@ -41,8 +41,10 @@ async def start(update: Update, context: CallbackContext):
         
         if user.username:
             user_details += f"یوزرنیم: @{user.username}"
-            markup = InlineKeyboardMarkup()
-            markup.add(InlineKeyboardButton("Go to chat", url=f"https://t.me/{user.username}"))
+            # اصلاح شده: ساخت صحیح InlineKeyboardMarkup
+            markup = InlineKeyboardMarkup([
+                [InlineKeyboardButton("Go to chat", url=f"https://t.me/{user.username}")]
+            ])
             await context.bot.send_message(ADMIN_ID, user_details, reply_markup=markup)
         else:
             user_details += f"🔥 User ID: [{user.id}](tg://user?id={user.id})"
@@ -69,6 +71,7 @@ async def start(update: Update, context: CallbackContext):
             reply_markup=main_menu()
         )
 
+        
 async def vip_handler(update: Update, context: CallbackContext):
     query = update.callback_query
     await query.answer()
