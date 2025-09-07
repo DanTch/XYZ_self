@@ -1,5 +1,5 @@
 import logging
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackQueryHandler, ConversationHandler, PicklePersistence
+from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackQueryHandler, ConversationHandler, PicklePersistence, filters
 from handlers import *
 from admin import *
 from database import Database
@@ -44,21 +44,21 @@ def main():
         ],
         states={
             SELECTING_POINTS: [CallbackQueryHandler(buy_points_handler, pattern='^buy_')],
-            AWAITING_PAYMENT: [MessageHandler(Filters.photo, payment_received)],
-            AWAITING_TOKEN: [MessageHandler(Filters.text & ~Filters.command, token_received)],
-            CUSTOM_POINTS: [MessageHandler(Filters.text & ~Filters.command, custom_points_handler)]
+            AWAITING_PAYMENT: [MessageHandler(filters.PHOTO, payment_received)],
+            AWAITING_TOKEN: [MessageHandler(filters.TEXT & ~filters.COMMAND, token_received)],
+            CUSTOM_POINTS: [MessageHandler(filters.TEXT & ~filters.COMMAND, custom_points_handler)]
         },
         fallbacks=[CommandHandler('cancel', cancel_handler)]
     )
     dp.add_handler(conv_handler)
     
     # هندلرهای متنی
-    dp.add_handler(MessageHandler(Filters.regex('^👻 سلف 𝐕𝐢𝐩 👻$'), vip_handler))
-    dp.add_handler(MessageHandler(Filters.regex('^🫠 سلف رایگان 🫠$'), free_self_handler))
-    dp.add_handler(MessageHandler(Filters.regex('^🫠 امتیاز رایگان 🫠$'), free_self_handler))
-    dp.add_handler(MessageHandler(Filters.regex('^💍 خرید امتیاز 💍$'), buy_points_handler))
-    dp.add_handler(MessageHandler(Filters.regex('^💎 حساب کاربری 💎$'), account_handler))
-    dp.add_handler(MessageHandler(Filters.regex('^💎 پنل نمایندگی 💎$'), reseller_handler))
+    dp.add_handler(MessageHandler(filters.Regex('^👻 سلف 𝐕𝐢𝐩 👻$'), vip_handler))
+    dp.add_handler(MessageHandler(filters.Regex('^🫠 سلف رایگان 🫠$'), free_self_handler))
+    dp.add_handler(MessageHandler(filters.Regex('^🫠 امتیاز رایگان 🫠$'), free_self_handler))
+    dp.add_handler(MessageHandler(filters.Regex('^💍 خرید امتیاز 💍$'), buy_points_handler))
+    dp.add_handler(MessageHandler(filters.Regex('^💎 حساب کاربری 💎$'), account_handler))
+    dp.add_handler(MessageHandler(filters.Regex('^💎 پنل نمایندگی 💎$'), reseller_handler))
     
     # شروع ربات
     updater.start_polling()
