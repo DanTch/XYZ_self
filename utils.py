@@ -1,4 +1,5 @@
 from config import *
+from database import db  # اضافه شده
 
 def calculate_referral_bonus(user_id, base_points):
     """محاسبه پاداش چندلایه برای دعوت‌کنندگان"""
@@ -13,15 +14,17 @@ def calculate_referral_bonus(user_id, base_points):
 
 def get_inviter(user_id):
     """دریافت دعوت‌کننده مستقیم کاربر"""
-    # این تابع باید در database.py پیاده‌سازی شود
-    pass
+    user = db.get_user(user_id)
+    if user:
+        return user[5]  # invited_by
+    return None
 
-def format_user_info(user_data):
+def format_user_info(user_data, referrals_count):  # تغییر یافت
     """فرمت‌دهی اطلاعات کاربر"""
     return f"""
 👤 نام: {user_data[1]} {user_data[2]}
 🆔 آیدی: {user_data[0]}
 👥 یوزرنیم: @{user_data[3] if user_data[3] else 'ندارد'}
 💎 امتیاز: {user_data[4]}
-🔗 تعداد دعوت: {len(get_referrals(user_data[0]))}
+🔗 تعداد دعوت: {referrals_count}
 """

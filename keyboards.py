@@ -36,3 +36,10 @@ def admin_menu():
         [InlineKeyboardButton("کاربران جدید", callback_data="admin_new_users")]
     ]
     return InlineKeyboardMarkup(keyboard)
+
+def reseller_menu():  # تابع جدید
+    keyboard = [
+        [InlineKeyboardButton("خرید پنل نمایندگی 🔥", callback_data="buy_reseller")],
+        [InlineKeyboardButton("🔙 بازگشت به منوی اصلی", callback_data="back_to_main")]
+    ]
+    return InlineKeyboardMarkup(keyboard)
