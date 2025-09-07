@@ -32,7 +32,7 @@ async def main():
         # دستورات اصلی
         app.add_handler(CommandHandler("start", start))
         app.add_handler(CommandHandler("admin", admin_panel))
-        app.add_handler(CommandHandler("add_points", add_points_command))  # اصلاح شد: pass_args حذف شد
+        app.add_handler(CommandHandler("add_points", add_points_command))
         
         # کالبک‌های اصلی
         app.add_handler(CallbackQueryHandler(vip_handler, pattern='^(what_is_self|buy_vip)$'))
@@ -44,7 +44,7 @@ async def main():
         app.add_handler(CallbackQueryHandler(admin_new_users, pattern='^admin_new_users$'))
         app.add_handler(CallbackQueryHandler(lambda u, c: u.message.reply_text("منوی اصلی:", reply_markup=main_menu()), pattern='^back_to_main$'))
         
-        # هندلرهای مکالمه
+        # هندلرهای مکالمه با تنظیمات اصلاح شده
         conv_handler = ConversationHandler(
             entry_points=[
                 CallbackQueryHandler(buy_points_handler, pattern='^buy_points$'),
@@ -56,7 +56,8 @@ async def main():
                 AWAITING_TOKEN: [MessageHandler(filters.TEXT & ~filters.COMMAND, token_received)],
                 CUSTOM_POINTS: [MessageHandler(filters.TEXT & ~filters.COMMAND, custom_points_handler)]
             },
-            fallbacks=[CommandHandler('cancel', cancel_handler)]
+            fallbacks=[CommandHandler('cancel', cancel_handler)],
+            per_message=False  # اضافه شد برای رفع هشدار
         )
         app.add_handler(conv_handler)
         
@@ -69,7 +70,21 @@ async def main():
         app.add_handler(MessageHandler(filters.Regex('^💎 پنل نمایندگی 💎$'), reseller_handler))
         
         # شروع ربات
-        await app.run_polling()
+        await app.initialize()
+        await app.start()
+        await app.updater.start_polling()
+        
+        # نگه داشتن ربات در حال اجرا
+        logger.info("Bot started successfully!")
+        
+        # منتظر ماندن برای دریافت سیگنال توقف
+        stop_signal = asyncio.Event()
+        await stop_signal.wait()
+        
+        # توقف ربات
+        await app.updater.stop()
+        await app.stop()
+        await app.shutdown()
         
     except Exception as e:
         logger.error(f"Error in main: {e}")
@@ -77,8 +92,17 @@ async def main():
 
 if __name__ == '__main__':
     try:
-        asyncio.run(main())
+        # ایجاد حلقه رویداد جدید
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(main())
     except KeyboardInterrupt:
         logger.info("Bot stopped by user")
     except Exception as e:
         logger.error(f"Fatal error: {e}")
+    finally:
+        # بستن حلقه رویداد
+        try:
+            loop.close()
+        except:
+            pass
