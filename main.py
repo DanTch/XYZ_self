@@ -26,7 +26,7 @@ async def main():
         db = Database()
         
         # ایجاد application با persistence
-        persistence = PicklePersistence(filename='bot_data')
+        persistence = PicklePersistence(filepath='bot_data')  # اصلاح شد: filename -> filepath
         app = Application.builder().token(BOT_TOKEN).persistence(persistence).build()
         
         # دستورات اصلی
