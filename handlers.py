@@ -299,3 +299,36 @@ async def free_self_handler(update: Update, context: CallbackContext):
 async def cancel_handler(update: Update, context: CallbackContext):
     await update.message.reply_text("عملیات لغو شد.", reply_markup=main_menu())
     return ConversationHandler.END
+
+# تابع جدید برای مدیریت خرید امتیاز دلخواه
+async def custom_points_handler(update: Update, context: CallbackContext):
+    user_id = update.message.from_user.id
+    text = update.message.text
+    
+    try:
+        points = int(text)
+        if points <= 0:
+            await update.message.reply_text("لطفاً یک عدد مثبت وارد کنید.")
+            return CUSTOM_POINTS
+        
+        # ذخیره درخواست پرداخت
+        context.user_data["pending_payment"] = {
+            "amount": points,
+            "user_id": user_id
+        }
+        
+        await update.message.reply_text(
+            f"لطفا مبلغ {points} تومان را به شماره کارت زیر واریز کنید:\n\n"
+            f"شماره کارت: {CARD_NUMBER}\n"
+            f"به نام: {CARD_OWNER}\n\n"
+            f"پس از واریز، فیش پرداخت را ارسال کنید.\n\n"
+            f"⏰ مهلت پرداخت: 15 دقیقه",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("لغو خرید", callback_data="cancel_payment")]
+            ])
+        )
+        return AWAITING_PAYMENT
+    
+    except ValueError:
+        await update.message.reply_text("لطفاً یک عدد معتبر وارد کنید.")
+        return CUSTOM_POINTS
