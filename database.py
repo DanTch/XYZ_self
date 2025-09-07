@@ -1,5 +1,6 @@
 import sqlite3
 from datetime import datetime
+from config import NEW_USER_BONUS, REFERRAL_BONUS  # اضافه شده
 
 class Database:
     def __init__(self, db_path="bot.db"):
