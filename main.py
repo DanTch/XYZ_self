@@ -1,4 +1,5 @@
 import logging
+import asyncio
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, ConversationHandler, PicklePersistence, filters
 from handlers import *
 from admin import *
@@ -12,7 +13,7 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-def main():
+async def main():
     # ایجاد دیتابیس
     db = Database()
     
@@ -60,7 +61,7 @@ def main():
     app.add_handler(MessageHandler(filters.Regex('^💎 پنل نمایندگی 💎$'), reseller_handler))
     
     # شروع ربات
-    app.run_polling()
+    await app.run_polling()
 
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())

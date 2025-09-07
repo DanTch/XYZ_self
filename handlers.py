@@ -1,6 +1,6 @@
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
-from telegram.constants import ParseMode
 from telegram.ext import CallbackContext, ConversationHandler, CommandHandler, MessageHandler, CallbackQueryHandler, filters
+from telegram.constants import ParseMode
 from database import Database
 from keyboards import *
 from config import *
@@ -11,7 +11,7 @@ db = Database()
 # حالت‌های مکالمه
 SELECTING_POINTS, AWAITING_PAYMENT, AWAITING_TOKEN, CUSTOM_POINTS = range(4)
 
-def start(update: Update, context: CallbackContext):
+async def start(update: Update, context: CallbackContext):
     user = update.message.from_user
     chat_id = user.id
     
@@ -43,16 +43,16 @@ def start(update: Update, context: CallbackContext):
             user_details += f"یوزرنیم: @{user.username}"
             markup = InlineKeyboardMarkup()
             markup.add(InlineKeyboardButton("Go to chat", url=f"https://t.me/{user.username}"))
-            context.bot.send_message(ADMIN_ID, user_details, reply_markup=markup)
+            await context.bot.send_message(ADMIN_ID, user_details, reply_markup=markup)
         else:
             user_details += f"🔥 User ID: [{user.id}](tg://user?id={user.id})"
-            context.bot.send_message(ADMIN_ID, user_details, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True)
+            await context.bot.send_message(ADMIN_ID, user_details, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True)
         
         # ارسال پیام به دعوت‌کننده
         if invited_by:
             inviter = db.get_user(invited_by)
             if inviter:
-                context.bot.send_message(
+                await context.bot.send_message(
                     invited_by,
                     f"کاربری که با کد دعوت شما وارد ربات شده بود، اقدام به عضویت کرد.\n\n"
                     f"🎁 3 امتیاز به شما اضافه شد.\n"
@@ -61,7 +61,7 @@ def start(update: Update, context: CallbackContext):
     
     # ارسال پیام خوشامدگویی
     with open(WELCOME_IMAGE_PATH, 'rb') as photo:
-        update.message.reply_photo(
+        await update.message.reply_photo(
             photo,
             caption=f"به ربات XYZ سلف خوش آمدید\n\n"
                    f"برای کار کردن با ربات از دستورات زیر استفاده کنید\n\n"
@@ -69,12 +69,12 @@ def start(update: Update, context: CallbackContext):
             reply_markup=main_menu()
         )
 
-def vip_handler(update: Update, context: CallbackContext):
+async def vip_handler(update: Update, context: CallbackContext):
     query = update.callback_query
-    query.answer()
+    await query.answer()
     
     if query.data == "what_is_self":
-        query.edit_message_text(
+        await query.edit_message_text(
             "سلف یک ربات است که بر روی اکانت تلگرام شما قرار میگیرد.\n\n"
             "قابلیت هایی را دارد که کاربران معمولی تلگرام ندارند.\n\n"
             "به معنای واقعی شما یک پله از کاربرانی که سلف ندارند جلو تر هستین\n\n"
@@ -107,7 +107,7 @@ def vip_handler(update: Update, context: CallbackContext):
             db.conn.commit()
             
             # ارسال به ادمین
-            context.bot.send_message(
+            await context.bot.send_message(
                 ADMIN_ID,
                 f"درخواست سلف VIP جدید:\n\n"
                 f"کاربر: {user_id}\n"
@@ -119,20 +119,20 @@ def vip_handler(update: Update, context: CallbackContext):
             for inviter_id, points in bonuses.items():
                 db.add_points(inviter_id, points)
                 inviter = db.get_user(inviter_id)
-                context.bot.send_message(
+                await context.bot.send_message(
                     inviter_id,
                     f"کاربری که با کد دعوت شما وارد ربات شده بود، اقدام به خرید سلف VIP کرد.\n\n"
                     f"🎁 {points} امتیاز به شما اضافه شد.\n"
                     f"موجودی جدید: {inviter[4] + points}"
                 )
             
-            query.edit_message_text("درخواست شما با موفقیت ثبت شد! به زودی با شما تماس خواهیم گرفت.")
+            await query.edit_message_text("درخواست شما با موفقیت ثبت شد! به زودی با شما تماس خواهیم گرفت.")
         else:
-            query.answer("امتیاز کافی ندارید!", show_alert=True)
+            await query.answer("امتیاز کافی ندارید!", show_alert=True)
 
-def buy_points_handler(update: Update, context: CallbackContext):
+async def buy_points_handler(update: Update, context: CallbackContext):
     query = update.callback_query
-    query.answer()
+    await query.answer()
     
     if query.data.startswith("buy_"):
         amount = int(query.data.split("_")[1])
@@ -144,7 +144,7 @@ def buy_points_handler(update: Update, context: CallbackContext):
             "user_id": user_id
         }
         
-        query.edit_message_text(
+        await query.edit_message_text(
             f"لطفا مبلغ {amount} تومان را به شماره کارت زیر واریز کنید:\n\n"
             f"شماره کارت: {CARD_NUMBER}\n"
             f"به نام: {CARD_OWNER}\n\n"
@@ -157,10 +157,10 @@ def buy_points_handler(update: Update, context: CallbackContext):
         return AWAITING_PAYMENT
     
     elif query.data == "buy_custom":
-        query.edit_message_text("مقدار امتیاز مورد نظر را وارد کنید:")
+        await query.edit_message_text("مقدار امتیاز مورد نظر را وارد کنید:")
         return CUSTOM_POINTS
 
-def payment_received(update: Update, context: CallbackContext):
+async def payment_received(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
     photo_file_id = update.message.photo[-1].file_id
     
@@ -174,7 +174,7 @@ def payment_received(update: Update, context: CallbackContext):
         )
         
         # ارسال به ادمین برای تأیید
-        context.bot.send_photo(
+        await context.bot.send_photo(
             ADMIN_ID,
             photo_file_id,
             caption=f"درخواست پرداخت جدید\n"
@@ -186,14 +186,14 @@ def payment_received(update: Update, context: CallbackContext):
             ])
         )
         
-        update.message.reply_text("فیش پرداخت شما برای تأیید به ادمین ارسال شد.")
+        await update.message.reply_text("فیش پرداخت شما برای تأیید به ادمین ارسال شد.")
         del context.user_data["pending_payment"]
     
     return ConversationHandler.END
 
-def admin_confirm_payment(update: Update, context: CallbackContext):
+async def admin_confirm_payment(update: Update, context: CallbackContext):
     query = update.callback_query
-    query.answer()
+    await query.answer()
     
     action, user_id = query.data.split("_")
     user_id = int(user_id)
@@ -209,17 +209,17 @@ def admin_confirm_payment(update: Update, context: CallbackContext):
             db.add_points(user_id, payment[0])
             db.update_payment_status(payment[0], "confirmed")
             
-            context.bot.send_message(user_id, "پرداخت شما با موفقیت تأیید شد. امتیازها به حساب شما اضافه گردید.")
-            query.edit_message_text("پرداخت تأیید شد.")
+            await context.bot.send_message(user_id, "پرداخت شما با موفقیت تأیید شد. امتیازها به حساب شما اضافه گردید.")
+            await query.edit_message_text("پرداخت تأیید شد.")
     
     elif action == "reject":
         db.update_payment_status(user_id, "rejected")
-        context.bot.send_message(user_id, "پرداخت شما رد شد. لطفاً دوباره تلاش کنید.")
-        query.edit_message_text("پرداخت رد شد.")
+        await context.bot.send_message(user_id, "پرداخت شما رد شد. لطفاً دوباره تلاش کنید.")
+        await query.edit_message_text("پرداخت رد شد.")
 
-def reseller_handler(update: Update, context: CallbackContext):
+async def reseller_handler(update: Update, context: CallbackContext):
     query = update.callback_query
-    query.answer()
+    await query.answer()
     
     user_id = query.from_user.id
     user = db.get_user(user_id)
@@ -233,17 +233,17 @@ def reseller_handler(update: Update, context: CallbackContext):
         )
         db.conn.commit()
         
-        query.edit_message_text("توکن ربات خود را ارسال کنید:")
+        await query.edit_message_text("توکن ربات خود را ارسال کنید:")
         return AWAITING_TOKEN
     else:
-        query.answer("امتیاز کافی ندارید!", show_alert=True)
+        await query.answer("امتیاز کافی ندارید!", show_alert=True)
 
-def token_received(update: Update, context: CallbackContext):
+async def token_received(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
     token = update.message.text
     
     # ارسال به ادمین
-    context.bot.send_message(
+    await context.bot.send_message(
         ADMIN_ID,
         f"درخواست ساخت پنل نمایندگی:\n\n"
         f"کاربر: {user_id}\n"
@@ -256,17 +256,17 @@ def token_received(update: Update, context: CallbackContext):
     for inviter_id, points in bonuses.items():
         db.add_points(inviter_id, points)
         inviter = db.get_user(inviter_id)
-        context.bot.send_message(
+        await context.bot.send_message(
             inviter_id,
             f"کاربری که با کد دعوت شما وارد ربات شده بود، اقدام به خرید پنل نمایندگی کرد.\n\n"
             f"🎁 {points} امتیاز به شما اضافه شد.\n"
             f"موجودی جدید: {inviter[4] + points}"
         )
     
-    update.message.reply_text("درخواست شما با موفقیت ثبت شد! به زودی با شما تماس خواهیم گرفت.")
+    await update.message.reply_text("درخواست شما با موفقیت ثبت شد! به زودی با شما تماس خواهیم گرفت.")
     return ConversationHandler.END
 
-def account_handler(update: Update, context: CallbackContext):
+async def account_handler(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
     user = db.get_user(user_id)
     referrals = db.get_referrals(user_id)
@@ -277,9 +277,9 @@ def account_handler(update: Update, context: CallbackContext):
     for ref in referrals:
         message += f"• {ref[1]} (@{ref[2] if ref[2] else 'ندارد'})\n"
     
-    update.message.reply_text(message, reply_markup=main_menu())
+    await update.message.reply_text(message, reply_markup=main_menu())
 
-def free_self_handler(update: Update, context: CallbackContext):
+async def free_self_handler(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
     user = db.get_user(user_id)
     
@@ -294,8 +294,8 @@ def free_self_handler(update: Update, context: CallbackContext):
         f"لینک دعوت شما:\n{referral_link}"
     )
     
-    update.message.reply_text(message, reply_markup=main_menu())
+    await update.message.reply_text(message, reply_markup=main_menu())
 
-def cancel_handler(update: Update, context: CallbackContext):
-    update.message.reply_text("عملیات لغو شد.", reply_markup=main_menu())
+async def cancel_handler(update: Update, context: CallbackContext):
+    await update.message.reply_text("عملیات لغو شد.", reply_markup=main_menu())
     return ConversationHandler.END
