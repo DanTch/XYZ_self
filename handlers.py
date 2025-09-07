@@ -5,6 +5,7 @@ from database import Database
 from keyboards import *
 from config import *
 import os
+from utils import format_user_info  # اضافه شده
 
 db = Database()
 
@@ -41,7 +42,6 @@ async def start(update: Update, context: CallbackContext):
         
         if user.username:
             user_details += f"یوزرنیم: @{user.username}"
-            # اصلاح شده: ساخت صحیح InlineKeyboardMarkup
             markup = InlineKeyboardMarkup([
                 [InlineKeyboardButton("Go to chat", url=f"https://t.me/{user.username}")]
             ])
@@ -71,96 +71,108 @@ async def start(update: Update, context: CallbackContext):
             reply_markup=main_menu()
         )
 
-        
 async def vip_handler(update: Update, context: CallbackContext):
-    query = update.callback_query
-    await query.answer()
+    # بررسی اینکه آیا update از نوع callback_query است یا message
+    if update.callback_query:
+        query = update.callback_query
+        await query.answer()
+        chat_id = query.from_user.id
+        message = query.message
+    else:
+        chat_id = update.message.from_user.id
+        message = update.message
     
-    if query.data == "what_is_self":
-        await query.edit_message_text(
-            "سلف یک ربات است که بر روی اکانت تلگرام شما قرار میگیرد.\n\n"
-            "قابلیت هایی را دارد که کاربران معمولی تلگرام ندارند.\n\n"
-            "به معنای واقعی شما یک پله از کاربرانی که سلف ندارند جلو تر هستین\n\n"
-            "خلاصه قابلیت های پرکاربردی سلف :\n\n"
-            "• سکوت دادن در پیوی\n"
-            "• سیو (عکس و فیلم....) تایم دار\n"
-            "• سیو (عکس و فیلم....) بعد از پاک شدن در چت\n"
-            "• فهمیدن متن ادیت شده\n"
-            "• فهمیدن متن پاک شده\n"
-            "• تنظیم دشمن\n"
-            "• تنظیم دشمنک\n"
-            "• ساعت در کنار اسم\n"
-            "• ساعت و تاریخ در بیو\n"
-            "• سیو متن و عکس و فایل از جاهایی که سیو یا فوروارد ممنوع است\n\n"
-            "برای بازگشت به منوی اصلی روی دکمه زیر کلیک کنید:",
-            reply_markup=vip_menu()
+    user = db.get_user(chat_id)
+    
+    if user[4] >= VIP_POINTS:
+        # کسر امتیاز و ثبت درخواست
+        db.add_points(chat_id, -VIP_POINTS)
+        db.cursor.execute(
+            "UPDATE users SET vip_purchase_count = vip_purchase_count + 1 WHERE user_id = ?",
+            (chat_id,)
         )
-    
-    elif query.data == "buy_vip":
-        user_id = query.from_user.id
-        user = db.get_user(user_id)
+        db.conn.commit()
         
-        if user[4] >= VIP_POINTS:
-            # کسر امتیاز و ثبت درخواست
-            db.add_points(user_id, -VIP_POINTS)
-            db.cursor.execute(
-                "UPDATE users SET vip_purchase_count = vip_purchase_count + 1 WHERE user_id = ?",
-                (user_id,)
-            )
-            db.conn.commit()
-            
-            # ارسال به ادمین
+        # ارسال به ادمین
+        await context.bot.send_message(
+            ADMIN_ID,
+            f"درخواست سلف VIP جدید:\n\n"
+            f"کاربر: {chat_id}\n"
+            f"یوزرنیم: @{user[3] if user[3] else 'ندارد'}"
+        )
+        
+        # محاسبه پاداش دعوت‌کنندگان
+        bonuses = calculate_referral_bonus(chat_id, VIP_REFERRAL_BONUS)
+        for inviter_id, points in bonuses.items():
+            db.add_points(inviter_id, points)
+            inviter = db.get_user(inviter_id)
             await context.bot.send_message(
-                ADMIN_ID,
-                f"درخواست سلف VIP جدید:\n\n"
-                f"کاربر: {user_id}\n"
-                f"یوزرنیم: @{user[3] if user[3] else 'ندارد'}"
+                inviter_id,
+                f"کاربری که با کد دعوت شما وارد ربات شده بود، اقدام به خرید سلف VIP کرد.\n\n"
+                f"🎁 {points} امتیاز به شما اضافه شد.\n"
+                f"موجودی جدید: {inviter[4] + points}"
             )
-            
-            # محاسبه پاداش دعوت‌کنندگان
-            bonuses = calculate_referral_bonus(user_id, VIP_REFERRAL_BONUS)
-            for inviter_id, points in bonuses.items():
-                db.add_points(inviter_id, points)
-                inviter = db.get_user(inviter_id)
-                await context.bot.send_message(
-                    inviter_id,
-                    f"کاربری که با کد دعوت شما وارد ربات شده بود، اقدام به خرید سلف VIP کرد.\n\n"
-                    f"🎁 {points} امتیاز به شما اضافه شد.\n"
-                    f"موجودی جدید: {inviter[4] + points}"
-                )
-            
+        
+        # ارسال پاسخ به کاربر
+        if update.callback_query:
             await query.edit_message_text("درخواست شما با موفقیت ثبت شد! به زودی با شما تماس خواهیم گرفت.")
         else:
+            await message.reply_text("درخواست شما با موفقیت ثبت شد! به زودی با شما تماس خواهیم گرفت.")
+    else:
+        if update.callback_query:
             await query.answer("امتیاز کافی ندارید!", show_alert=True)
+        else:
+            await message.reply_text("امتیاز کافی ندارید!")
 
 async def buy_points_handler(update: Update, context: CallbackContext):
-    query = update.callback_query
-    await query.answer()
+    # بررسی اینکه آیا update از نوع callback_query است یا message
+    if update.callback_query:
+        query = update.callback_query
+        await query.answer()
+        chat_id = query.from_user.id
+        data = query.data
+    else:
+        chat_id = update.message.from_user.id
+        data = None
     
-    if query.data.startswith("buy_"):
-        amount = int(query.data.split("_")[1])
-        user_id = query.from_user.id
+    if data and data.startswith("buy_"):
+        amount = int(data.split("_")[1])
         
         # ذخیره درخواست پرداخت
         context.user_data["pending_payment"] = {
             "amount": amount,
-            "user_id": user_id
+            "user_id": chat_id
         }
         
-        await query.edit_message_text(
+        text = (
             f"لطفا مبلغ {amount} تومان را به شماره کارت زیر واریز کنید:\n\n"
             f"شماره کارت: {CARD_NUMBER}\n"
             f"به نام: {CARD_OWNER}\n\n"
             f"پس از واریز، فیش پرداخت را ارسال کنید.\n\n"
-            f"⏰ مهلت پرداخت: 15 دقیقه",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("لغو خرید", callback_data="cancel_payment")]
-            ])
+            f"⏰ مهلت پرداخت: 15 دقیقه"
         )
+        
+        if update.callback_query:
+            await query.edit_message_text(
+                text,
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("لغو خرید", callback_data="cancel_payment")]
+                ])
+            )
+        else:
+            await update.message.reply_text(
+                text,
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("لغو خرید", callback_data="cancel_payment")]
+                ])
+            )
         return AWAITING_PAYMENT
     
-    elif query.data == "buy_custom":
-        await query.edit_message_text("مقدار امتیاز مورد نظر را وارد کنید:")
+    elif data and data == "buy_custom":
+        if update.callback_query:
+            await query.edit_message_text("مقدار امتیاز مورد نظر را وارد کنید:")
+        else:
+            await update.message.reply_text("مقدار امتیاز مورد نظر را وارد کنید:")
         return CUSTOM_POINTS
 
 async def payment_received(update: Update, context: CallbackContext):
@@ -221,25 +233,35 @@ async def admin_confirm_payment(update: Update, context: CallbackContext):
         await query.edit_message_text("پرداخت رد شد.")
 
 async def reseller_handler(update: Update, context: CallbackContext):
-    query = update.callback_query
-    await query.answer()
+    # بررسی اینکه آیا update از نوع callback_query است یا message
+    if update.callback_query:
+        query = update.callback_query
+        await query.answer()
+        chat_id = query.from_user.id
+    else:
+        chat_id = update.message.from_user.id
     
-    user_id = query.from_user.id
-    user = db.get_user(user_id)
+    user = db.get_user(chat_id)
     
     if user[4] >= RESELLER_POINTS:
         # کسر امتیاز و درخواست توکن
-        db.add_points(user_id, -RESELLER_POINTS)
+        db.add_points(chat_id, -RESELLER_POINTS)
         db.cursor.execute(
             "UPDATE users SET reseller_purchase_count = reseller_purchase_count + 1 WHERE user_id = ?",
-            (user_id,)
+            (chat_id,)
         )
         db.conn.commit()
         
-        await query.edit_message_text("توکن ربات خود را ارسال کنید:")
+        if update.callback_query:
+            await query.edit_message_text("توکن ربات خود را ارسال کنید:")
+        else:
+            await update.message.reply_text("توکن ربات خود را ارسال کنید:")
         return AWAITING_TOKEN
     else:
-        await query.answer("امتیاز کافی ندارید!", show_alert=True)
+        if update.callback_query:
+            await query.answer("امتیاز کافی ندارید!", show_alert=True)
+        else:
+            await update.message.reply_text("امتیاز کافی ندارید!")
 
 async def token_received(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
