@@ -1,66 +1,68 @@
-from telegram import Update, ParseMode
-from telegram.ext import CallbackContext, CommandHandler, CallbackQueryHandler
+import logging
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackQueryHandler, ConversationHandler, PicklePersistence
+from handlers import *
+from admin import *
 from database import Database
-from keyboards import admin_menu
 
-db = Database()
+# تنظیم لاگینگ
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
 
-def admin_panel(update: Update, context: CallbackContext):
-    if update.message.from_user.id != ADMIN_ID:
-        update.message.reply_text("شما دسترسی ادمین ندارید!")
-        return
+logger = logging.getLogger(__name__)
+
+def main():
+    # ایجاد دیتابیس
+    db = Database()
     
-    update.message.reply_text("پنل مدیریت:", reply_markup=admin_menu())
-
-def admin_add_points(update: Update, context: CallbackContext):
-    query = update.callback_query
-    query.answer()
+    # ایجاد updater با persistence
+    persistence = PicklePersistence(filename='bot_data')
+    updater = Updater(BOT_TOKEN, persistence=persistence)
+    dp = updater.dispatcher
     
-    if query.data == "admin_add_points":
-        query.edit_message_text("آیدی کاربر و مقدار امتیاز را با فرمت زیر ارسال کنید:\n\n/add_points user_id points")
-        return ADMIN_ADD_POINTS
-
-def add_points_command(update: Update, context: CallbackContext):
-    if update.message.from_user.id != ADMIN_ID:
-        return
+    # دستورات اصلی
+    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CommandHandler("admin", admin_panel))
+    dp.add_handler(CommandHandler("add_points", add_points_command, pass_args=True))
     
-    try:
-        user_id = int(context.args[0])
-        points = int(context.args[1])
-        db.add_points(user_id, points)
-        update.message.reply_text(f"امتیاز {points} به کاربر {user_id} اضافه شد.")
-    except (IndexError, ValueError):
-        update.message.reply_text("فرمت صحیح: /add_points user_id points")
-
-def admin_sales_report(update: Update, context: CallbackContext):
-    query = update.callback_query
-    query.answer()
+    # کالبک‌های اصلی
+    dp.add_handler(CallbackQueryHandler(vip_handler, pattern='^(what_is_self|buy_vip)$'))
+    dp.add_handler(CallbackQueryHandler(buy_points_handler, pattern='^buy_'))
+    dp.add_handler(CallbackQueryHandler(admin_confirm_payment, pattern='^(confirm|reject)_'))
+    dp.add_handler(CallbackQueryHandler(reseller_handler, pattern='^buy_reseller$'))
+    dp.add_handler(CallbackQueryHandler(admin_add_points, pattern='^admin_add_points$'))
+    dp.add_handler(CallbackQueryHandler(admin_sales_report, pattern='^admin_sales_report$'))
+    dp.add_handler(CallbackQueryHandler(admin_new_users, pattern='^admin_new_users$'))
+    dp.add_handler(CallbackQueryHandler(lambda u, c: u.message.reply_text("منوی اصلی:", reply_markup=main_menu()), pattern='^back_to_main$'))
     
-    if query.data == "admin_sales_report":
-        # دریافت گزارش فروش
-        vip_sales = db.cursor.execute("SELECT SUM(vip_purchase_count) FROM users").fetchone()[0] or 0
-        reseller_sales = db.cursor.execute("SELECT SUM(reseller_purchase_count) FROM users").fetchone()[0] or 0
-        
-        report = (
-            "گزارش فروش:\n\n"
-            f"👻 فروش سلف VIP: {vip_sales} عدد\n"
-            f"💎 فروش پنل نمایندگی: {reseller_sales} عدد"
-        )
-        
-        query.edit_message_text(report, reply_markup=admin_menu())
-
-def admin_new_users(update: Update, context: CallbackContext):
-    query = update.callback_query
-    query.answer()
+    # هندلرهای مکالمه
+    conv_handler = ConversationHandler(
+        entry_points=[
+            CallbackQueryHandler(buy_points_handler, pattern='^buy_points$'),
+            CallbackQueryHandler(reseller_handler, pattern='^buy_reseller$')
+        ],
+        states={
+            SELECTING_POINTS: [CallbackQueryHandler(buy_points_handler, pattern='^buy_')],
+            AWAITING_PAYMENT: [MessageHandler(Filters.photo, payment_received)],
+            AWAITING_TOKEN: [MessageHandler(Filters.text & ~Filters.command, token_received)],
+            CUSTOM_POINTS: [MessageHandler(Filters.text & ~Filters.command, custom_points_handler)]
+        },
+        fallbacks=[CommandHandler('cancel', cancel_handler)]
+    )
+    dp.add_handler(conv_handler)
     
-    if query.data == "admin_new_users":
-        # دریافت 10 کاربر آخر
-        users = db.cursor.execute(
-            "SELECT user_id, first_name, username FROM users ORDER BY user_id DESC LIMIT 10"
-        ).fetchall()
-        
-        message = "10 کاربر آخر:\n\n"
-        for user in users:
-            message += f"• {user[1]} (@{user[2] if user[2] else 'ندارد'}) - {user[0]}\n"
-        
-        query.edit_message_text(message, reply_markup=admin_menu())
+    # هندلرهای متنی
+    dp.add_handler(MessageHandler(Filters.regex('^👻 سلف 𝐕𝐢𝐩 👻$'), vip_handler))
+    dp.add_handler(MessageHandler(Filters.regex('^🫠 سلف رایگان 🫠$'), free_self_handler))
+    dp.add_handler(MessageHandler(Filters.regex('^🫠 امتیاز رایگان 🫠$'), free_self_handler))
+    dp.add_handler(MessageHandler(Filters.regex('^💍 خرید امتیاز 💍$'), buy_points_handler))
+    dp.add_handler(MessageHandler(Filters.regex('^💎 حساب کاربری 💎$'), account_handler))
+    dp.add_handler(MessageHandler(Filters.regex('^💎 پنل نمایندگی 💎$'), reseller_handler))
+    
+    # شروع ربات
+    updater.start_polling()
+    updater.idle()
+
+if __name__ == '__main__':
+    main()
