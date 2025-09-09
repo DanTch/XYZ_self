@@ -53,7 +53,10 @@ async def main():
                 CallbackQueryHandler(reseller_handler, pattern='^buy_reseller$')
             ],
             states={
-                SELECTING_POINTS: [CallbackQueryHandler(buy_points_handler, pattern='^buy_')],
+                SELECTING_POINTS: [
+                    CallbackQueryHandler(buy_points_handler, pattern='^buy_\d+$'),  # برای دکمه‌های عددی
+                    CallbackQueryHandler(buy_points_handler, pattern='^buy_custom$')  # برای دکمه دلخواه
+                ],
                 AWAITING_PAYMENT: [
                     MessageHandler(filters.PHOTO, payment_received),
                     CallbackQueryHandler(cancel_payment_handler, pattern='^cancel_payment$')
@@ -69,9 +72,11 @@ async def main():
             name="payment_conversation",
             persistent=True
         )
+
+        # اضافه کردن ConversationHandler با اولویت بالا
         app.add_handler(conv_handler)
-        
-        # هندلر مستقیم برای پیام‌های متنی
+
+        # سپس هندلرهای دیگر
         app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text_messages))
         
         # شروع ربات

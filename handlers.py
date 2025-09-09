@@ -275,12 +275,15 @@ async def buy_points_handler(update: Update, context: CallbackContext):
     query = update.callback_query
     if query:
         await query.answer()
+        print(f"داده کالبک دریافت شده: {query.data}")  # لاگ برای دیباگ
     
     if query and query.data == "buy_points":
+        print("در حال نمایش منوی خرید امتیاز...")  # لاگ برای دیباگ
         await show_buy_points_menu(update, context)
         return SELECTING_POINTS
     
     if query and query.data.startswith("buy_"):
+        print(f"در حال پردازش خرید: {query.data}")  # لاگ برای دیباگ
         try:
             amount = int(query.data.split("_")[1])
             user_id = query.from_user.id
@@ -311,11 +314,15 @@ async def buy_points_handler(update: Update, context: CallbackContext):
             return ConversationHandler.END
     
     elif query and query.data == "buy_custom":
+        print("در حال درخواست خرید امتیاز دلخواه...")  # لاگ برای دیباگ
         await query.edit_message_text("مقدار امتیاز مورد نظر را وارد کنید:")
         return CUSTOM_POINTS
 
+
 async def show_buy_points_menu(update: Update, context: CallbackContext):
     """این تابع منوی خرید امتیاز را نمایش می‌دهد"""
+    print("show_buy_points_menu فراخوانی شد")  # لاگ برای دیباگ
+    
     # بررسی اینکه آیا از طریق CallbackQuery فراخوانی شده است یا نه
     if hasattr(update, 'callback_query') and update.callback_query:
         query = update.callback_query
@@ -410,6 +417,7 @@ async def payment_received(update: Update, context: CallbackContext):
     
     return ConversationHandler.END
 
+
 async def cancel_payment_handler(update: Update, context: CallbackContext):
     query = update.callback_query
     await query.answer()
@@ -431,6 +439,7 @@ async def cancel_payment_handler(update: Update, context: CallbackContext):
     
     return ConversationHandler.END
 
+    
 async def admin_confirm_payment(update: Update, context: CallbackContext):
     query = update.callback_query
     if query:
