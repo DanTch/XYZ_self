@@ -5,16 +5,19 @@ from database import Database
 from keyboards import admin_menu
 
 # تعریف مستقیم متغیر ADMIN_ID
-ADMIN_ID = 6270301002  # آیدی عددی ادمین را اینجا قرار دهید
+ADMIN_ID = 6270301002  # آیدی عددی ادمین
 
 db = Database()
 
 async def admin_panel(update: Update, context: CallbackContext):
-    # نمایش آیدی برای عیب‌یابی
-    print(f"آیدی کاربر: {update.message.from_user.id}")
-    print(f"آیدی ادمین: {ADMIN_ID}")
+    # تبدیل هر دو مقدار به رشته برای مقایسه
+    user_id = str(update.message.from_user.id)
+    admin_id = str(ADMIN_ID)
     
-    if str(update.message.from_user.id) != str(ADMIN_ID):
+    print(f"آیدی کاربر: {user_id}")
+    print(f"آیدی ادمین: {admin_id}")
+    
+    if user_id != admin_id:
         await update.message.reply_text("شما دسترسی ادمین ندارید!")
         return
     
@@ -26,7 +29,8 @@ async def admin_add_points(update: Update, context: CallbackContext):
     
     if query.data == "admin_add_points":
         await query.edit_message_text("آیدی کاربر و مقدار امتیاز را با فرمت زیر ارسال کنید:\n\n/add_points user_id points")
-        return ADMIN_ADD_POINTS
+        # حذف شده: return ADMIN_ADD_POINTS
+        # به جای حالت مکالمه، فقط پیام راهنما ارسال می‌کنیم
 
 async def add_points_command(update: Update, context: CallbackContext):
     if str(update.message.from_user.id) != str(ADMIN_ID):

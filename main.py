@@ -21,6 +21,17 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
+# حالت‌های مکالمه برای ادمین
+ADMIN_ADD_POINTS = 1
+
+async def admin_add_points(update: Update, context: CallbackContext):
+    query = update.callback_query
+    await query.answer()
+    
+    if query.data == "admin_add_points":
+        await query.edit_message_text("آیدی کاربر و مقدار امتیاز را با فرمت زیر ارسال کنید:\n\n/add_points user_id points")
+        return ADMIN_ADD_POINTS  # برگرداندن حالت مکالمه
+
 async def main():
     try:
         # ایجاد دیتابیس
