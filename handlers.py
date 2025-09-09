@@ -99,24 +99,24 @@ async def vip_handler(update: Update, context: CallbackContext):
     if query and query.data == "what_is_self":
         # نمایش توضیحات کامل سلف
         explanation_text = """
-🤖 **سلف چیست؟**
+🤖 <b>سلف چیست؟</b>
 
 سلف یک ربات است که بر روی اکانت تلگرام شما قرار میگیرد و قابلیت‌هایی را فراهم می‌کند که کاربران معمولی تلگرام ندارند. با داشتن سلف، شما یک پله از کاربران عادی جلوتر هستید!
 
-📋 **قابلیت‌های پرکاربردی سلف:**
+📋 <b>قابلیت‌های پرکاربردی سلف:</b>
 
-• 🔇 **سکوت دادن در پیوی**: می‌توانید فردی را در پیوی سکوت دهید (بدون بلاک کردن)
-• 💾 **سیو تایم دار**: ذخیره خودکار عکس و فیلم با زمان‌بندی مشخص
-• 🔄 **سیو بعد از پاک**: ذخیره محتوا حتی بعد از پاک شدن در چت
-• 📝 **فهمیدن متن ادیت شده**: مشاهده متن قبل از ویرایش
-• 👁️ **فهمیدن متن پاک شده**: مشاهده پیام‌های حذف شده
-• 😈 **تنظیم دشمن**: فحش خودکار به افراد نامطلوب
-• 😄 **تنظیم دشمنک**: فحش دوستانه به دوستان (برای سرگرمی)
-• ⏰ **ساعت در کنار اسم**: ساعت زنده که هر دقیقه آپدیت می‌شود
-• 📅 **ساعت و تاریخ در بیو**: تاریخ و ساعت زنده در بیوگرافی
-• 💾 **سیو از محدودیت‌ها**: ذخیره از چت‌ها و محتواهای محدود (مثل SCAM)
+• 🔇 <b>سکوت دادن در پیوی</b>: می‌توانید فردی را در پیوی سکوت دهید (بدون بلاک کردن)
+• 💾 <b>سیو تایم دار</b>: ذخیره خودکار عکس و فیلم با زمان‌بندی مشخص
+• 🔄 <b>سیو بعد از پاک</b>: ذخیره محتوا حتی بعد از پاک شدن در چت
+• 📝 <b>فهمیدن متن ادیت شده</b>: مشاهده متن قبل از ویرایش
+• 👁️ <b>فهمیدن متن پاک شده</b>: مشاهده پیام‌های حذف شده
+• 😈 <b>تنظیم دشمن</b>: فحش خودکار به افراد نامطلوب
+• 😄 <b>تنظیم دشمنک</b>: فحش دوستانه به دوستان (برای سرگرمی)
+• ⏰ <b>ساعت در کنار اسم</b>: ساعت زنده که هر دقیقه آپدیت می‌شود
+• 📅 <b>ساعت و تاریخ در بیو</b>: تاریخ و ساعت زنده در بیوگرافی
+• 💾 <b>سیو از محدودیت‌ها</b>: ذخیره از چت‌ها و محتواهای محدود (مثل SCAM)
 
-🌟 **با سلف VIP چه مزایایی دارید؟**
+🌟 <b>با سلف VIP چه مزایایی دارید؟</b>
 
 ✅ پشتیبانی فعال و 24 ساعته
 ✅ کمترین پینگ و تاخیر در اجرای دستورات
@@ -134,28 +134,28 @@ async def vip_handler(update: Update, context: CallbackContext):
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         if query:
-            await query.edit_message_text(explanation_text, reply_markup=reply_markup)
+            await query.edit_message_text(explanation_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
         else:
-            await message.reply_text(explanation_text, reply_markup=reply_markup)
+            await message.reply_text(explanation_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
         return
     
     elif query and query.data == "buy_vip":
         # بررسی موجودی کاربر
         if user[4] < VIP_POINTS:
             insufficient_points_text = f"""
-❌ **موجودی کافی ندارید!**
+❌ <b>موجودی کافی ندارید!</b>
 
-📊 **وضعیت امتیاز شما:**
+📊 <b>وضعیت امتیاز شما:</b>
 • امتیاز مورد نیاز: {VIP_POINTS} امتیاز
 • امتیاز فعلی شما: {user[4]} امتیاز
 • کمبود: {VIP_POINTS - user[4]} امتیاز
 
-💡 **راه‌های افزایش امتیاز:**
+💡 <b>راه‌های افزایش امتیاز:</b>
 • از دوستان خود با لینک دعوت دعوت کنید ({REFERRAL_BONUS} امتیاز به از هر نفر)
 • امتیاز خریداری کنید (از بخش خرید امتیاز)
 • در صورت خرید کاربران دعوت شده توسط شما، پاداش دریافت کنید
 
-🔗 **لینک دعوت شما:**
+🔗 <b>لینک دعوت شما:</b>
 https://t.me/{context.bot.username}?start={chat_id}
             """
             
@@ -167,14 +167,14 @@ https://t.me/{context.bot.username}?start={chat_id}
             
             if query:
                 await query.answer("موجودی کافی ندارید!", show_alert=True)
-                await query.edit_message_text(insufficient_points_text, reply_markup=reply_markup)
+                await query.edit_message_text(insufficient_points_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
             else:
-                await message.reply_text(insufficient_points_text, reply_markup=reply_markup)
+                await message.reply_text(insufficient_points_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
             return
         
         # نمایش پیام پردازش
         processing_text = """
-⏳ **در حال پردازش درخواست شما...**
+⏳ <b>در حال پردازش درخواست شما...</b>
 لطفاً چند لحظه صبر کنید، درخواست شما در حال بررسی است.
         """
         
@@ -184,9 +184,9 @@ https://t.me/{context.bot.username}?start={chat_id}
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         if query:
-            await query.edit_message_text(processing_text, reply_markup=reply_markup)
+            await query.edit_message_text(processing_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
         else:
-            await message.reply_text(processing_text, reply_markup=reply_markup)
+            await message.reply_text(processing_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
         
         # شبیه‌سازی پردازش
         await asyncio.sleep(2)
@@ -202,19 +202,19 @@ https://t.me/{context.bot.username}?start={chat_id}
         # ارسال به ادمین
         try:
             admin_message = f"""
-🆕 **درخواست جدید سلف VIP**
+🆕 <b>درخواست جدید سلف VIP</b>
 
-👤 **مشخصات کاربر:**
+👤 <b>مشخصات کاربر:</b>
 • آیدی: {chat_id}
 • نام: {user[1]} {user[2]}
 • یوزرنیم: @{user[3] if user[3] else 'ندارد'}
 
-📋 **جزئیات درخواست:**
+📋 <b>جزئیات درخواست:</b>
 • نوع درخواست: سلف VIP
 • امتیاز کسر شده: {VIP_POINTS}
 • زمان درخواست: {datetime.now().strftime('%Y-%m-%d %H:%M')}
             """
-            await context.bot.send_message(ADMIN_ID, admin_message)
+            await context.bot.send_message(ADMIN_ID, admin_message, parse_mode=ParseMode.HTML)
         except Forbidden:
             pass
         
@@ -227,38 +227,38 @@ https://t.me/{context.bot.username}?start={chat_id}
             # ارسال پیام به دعوت‌کننده
             try:
                 bonus_message = f"""
-🎉 **تبریک! پاداش دریافت کردید**
+🎉 <b>تبریک! پاداش دریافت کردید</b>
 
 کاربری که با کد دعوت شما وارد ربات شده بود، اقدام به خرید سلف VIP کرد!
 
-💰 **جزئیات پاداش:**
+💰 <b>جزئیات پاداش:</b>
 • مبلغ پاداش: {points} امتیاز
 • نوع خرید: سلف VIP
 • موجودی جدید: {inviter[4] + points} امتیاز
 
 🙏 از همراهی شما سپاسگزاریم!
                 """
-                await context.bot.send_message(inviter_id, bonus_message)
+                await context.bot.send_message(inviter_id, bonus_message, parse_mode=ParseMode.HTML)
             except Forbidden:
                 pass
         
         # پیام تأیید نهایی به کاربر
         success_text = """
-✅ **درخواست شما با موفقیت ثبت شد!**
+✅ <b>درخواست شما با موفقیت ثبت شد!</b>
 
-🎉 **سلف VIP شما در حال ساخت است**
+🎉 <b>سلف VIP شما در حال ساخت است</b>
 
-📋 **اطلاعات تکمیلی:**
+📋 <b>اطلاعات تکمیلی:</b>
 • کد پیگیری: {str(chat_id)[-6:]}
 • زمان ساخت: 1-2 ساعت کاری
 • پشتیبانی: 24 ساعته
 
-🔧 **مراحل بعدی:**
+🔧 <b>مراحل بعدی:</b>
 • به زودی با شما تماس خواهیم گرفت
 • دسترسی‌های سلف برای شما فعال خواهد شد
 • لینک فعالسازی برای شما ارسال می‌شود
 
-🌟 **از انتخاب شما سپاسگزاریم!**
+🌟 <b>از انتخاب شما سپاسگزاریم!</b>
         """
         
         keyboard = [
@@ -267,10 +267,11 @@ https://t.me/{context.bot.username}?start={chat_id}
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         if query:
-            await query.edit_message_text(success_text, reply_markup=reply_markup)
+            await query.edit_message_text(success_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
         else:
-            await message.reply_text(success_text, reply_markup=reply_markup)
+            await message.reply_text(success_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
 
+            
 async def buy_points_handler(update: Update, context: CallbackContext):
     query = update.callback_query
     if query:
@@ -332,8 +333,6 @@ async def buy_points_handler(update: Update, context: CallbackContext):
 
 async def show_buy_points_menu(update: Update, context: CallbackContext):
     """این تابع منوی خرید امتیاز را نمایش می‌دهد"""
-    print("show_buy_points_menu فراخوانی شد")  # لاگ برای دیباگ
-    
     # بررسی اینکه آیا از طریق CallbackQuery فراخوانی شده است یا نه
     if hasattr(update, 'callback_query') and update.callback_query:
         query = update.callback_query
@@ -356,17 +355,16 @@ async def show_buy_points_menu(update: Update, context: CallbackContext):
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     text = (
-        "💎 **منوی خرید امتیاز**\n\n"
+        "💎 <b>منوی خرید امتیاز</b>\n\n"
         "لطفاً یکی از گزینه‌های زیر را انتخاب کنید:"
     )
     
     # اگر از طریق CallbackQuery فراخوانی شده باشد، پیام را ویرایش کن
     if is_callback:
-        await query.edit_message_text(text, reply_markup=reply_markup)
+        await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
     else:
-        await message.reply_text(text, reply_markup=reply_markup)
-    
-    print("منوی خرید امتیاز نمایش داده شد")  # لاگ برای دیباگ
+        await message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+
 
 
 async def payment_received(update: Update, context: CallbackContext):
@@ -565,14 +563,16 @@ async def show_reseller_menu(update: Update, context: CallbackContext):
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     text = (
-        "👻 **💎 پنل نمایندگی 💎**\n\n"
+        "👻 <b>💎 پنل نمایندگی 💎</b>\n\n"
         "لطفاً یکی از گزینه‌های زیر را انتخاب کنید:"
     )
     
     if is_callback:
-        await query.edit_message_text(text, reply_markup=reply_markup)
+        await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
     else:
-        await message.reply_text(text, reply_markup=reply_markup)
+        await message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+
+
 
 async def reseller_what_is(update: Update, context: CallbackContext):
     """این تابع توضیحات پنل نمایندگی را نمایش می‌دهد"""
@@ -586,18 +586,18 @@ async def reseller_what_is(update: Update, context: CallbackContext):
 شما پنل کامل مدیریت دارید و می‌تونید برای تا ۲۰ نفر سلف فعال کنید. تمام مراحل راه‌اندازی، پشتیبانی و تنظیمات رو هم ما براتون انجام می‌دیم.
 این گزینه مناسب افرادیه که قصد دارن خودشون هم این خدمات رو ارائه بدن یا به فروش برسونن 💰
 
-🌟 **ویژگی‌های پنل نمایندگی:**
+🌟 <b>ویژگی‌های پنل نمایندگی:</b>
 
-• 🔧 **ربات اختصاصی**: مشابه ربات اصلی با برند شما
-• 🖥️ **پنل مدیریت کامل**: کنترل کامل بر کاربران و خدمات
-• 💰 **درآمدزایی مستقل**: فروش مستقیم به کاربران با قیمت خودتان
-• 🌐 **سرور اختصاصی**: عملکرد سریع و بدون تداخل
-• 👥 **ظرفیت 20 کاربر**: امکان فعال‌سازی برای حداکثر 20 نفر
-• 🛠️ **راه‌اندازی رایگان**: نصب و تنظیمات توسط تیم ما
-• 📞 **پشتیبانی 24 ساعته**: پشتیبانی شما و کاربرانتان
-• 🔄 **به‌روزرسانی رایگان**: دسترسی به آخرین نسخه‌ها
+• 🔧 <b>ربات اختصاصی</b>: مشابه ربات اصلی با برند شما
+• 🖥️ <b>پنل مدیریت کامل</b>: کنترل کامل بر کاربران و خدمات
+• 💰 <b>درآمدزایی مستقل</b>: فروش مستقیم به کاربران با قیمت خودتان
+• 🌐 <b>سرور اختصاصی</b>: عملکرد سریع و بدون تداخل
+• 👥 <b>ظرفیت 20 کاربر</b>: امکان فعال‌سازی برای حداکثر 20 نفر
+• 🛠️ <b>راه‌اندازی رایگان</b>: نصب و تنظیمات توسط تیم ما
+• 📞 <b>پشتیبانی 24 ساعته</b>: پشتیبانی شما و کاربرانتان
+• 🔄 <b>به‌روزرسانی رایگان</b>: دسترسی به آخرین نسخه‌ها
 
-💎 **مزایای ویژه:**
+💎 <b>مزایای ویژه:</b>
 
 ✅ کسب درآمد دائمی از فروش سلف
 ✅ برندینگ شخصی برای کسب‌وکار شما
@@ -606,7 +606,7 @@ async def reseller_what_is(update: Update, context: CallbackContext):
 ✅ امکان تعریف پلن‌های قیمت‌گذاری مختلف
 ✅ دسترسی به آمار و گزارشات فروش
 
-🎯 **این پنل برای چه کسانی مناسب است؟**
+🎯 <b>این پنل برای چه کسانی مناسب است؟</b>
 
 • افرادی که قصد دارند خدمات سلف را ارائه دهند
 • کسانی که به دنبال کسب درآمد آنلاین هستند
@@ -622,7 +622,8 @@ async def reseller_what_is(update: Update, context: CallbackContext):
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    await query.edit_message_text(explanation_text, reply_markup=reply_markup)
+    await query.edit_message_text(explanation_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+
 
 async def buy_reseller_panel(update: Update, context: CallbackContext):
     """این تابع خرید پنل نمایندگی را مدیریت می‌کند"""
@@ -635,19 +636,19 @@ async def buy_reseller_panel(update: Update, context: CallbackContext):
     # بررسی موجودی کاربر
     if user[4] < RESELLER_POINTS:
         insufficient_points_text = f"""
-❌ **موجودی کافی ندارید!**
+❌ <b>موجودی کافی ندارید!</b>
 
-📊 **وضعیت امتیاز شما:**
+📊 <b>وضعیت امتیاز شما:</b>
 • امتیاز مورد نیاز: {RESELLER_POINTS} امتیاز
 • امتیاز فعلی شما: {user[4]} امتیاز
 • کمبود: {RESELLER_POINTS - user[4]} امتیاز
 
-💡 **راه‌های افزایش امتیاز:**
+💡 <b>راه‌های افزایش امتیاز:</b>
 • از دوستان خود با لینک دعوت دعوت کنید ({REFERRAL_BONUS} امتیاز به از هر نفر)
 • امتیاز خریداری کنید (از بخش خرید امتیاز)
 • در صورت خرید کاربران دعوت شده توسط شما، پاداش دریافت کنید
 
-🔗 **لینک دعوت شما:**
+🔗 <b>لینک دعوت شما:</b>
 https://t.me/{context.bot.username}?start={user_id}
         """
         
@@ -657,12 +658,12 @@ https://t.me/{context.bot.username}?start={user_id}
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
-        await query.edit_message_text(insufficient_points_text, reply_markup=reply_markup)
+        await query.edit_message_text(insufficient_points_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
         return
     
     # نمایش پیام پردازش
     processing_text = """
-⏳ **در حال پردازش درخواست شما...**
+⏳ <b>در حال پردازش درخواست شما...</b>
 لطفاً چند لحظه صبر کنید، درخواست شما در حال بررسی است.
     """
     
@@ -671,7 +672,7 @@ https://t.me/{context.bot.username}?start={user_id}
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    await query.edit_message_text(processing_text, reply_markup=reply_markup)
+    await query.edit_message_text(processing_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
     
     # شبیه‌سازی پردازش
     await asyncio.sleep(2)
@@ -687,19 +688,19 @@ https://t.me/{context.bot.username}?start={user_id}
     # ارسال به ادمین
     try:
         admin_message = f"""
-🆕 **درخواست جدید پنل نمایندگی**
+🆕 <b>درخواست جدید پنل نمایندگی</b>
 
-👤 **مشخصات کاربر:**
+👤 <b>مشخصات کاربر:</b>
 • آیدی: {user_id}
 • نام: {user[1]} {user[2]}
 • یوزرنیم: @{user[3] if user[3] else 'ندارد'}
 
-📋 **جزئیات درخواست:**
+📋 <b>جزئیات درخواست:</b>
 • نوع درخواست: پنل نمایندگی
 • امتیاز کسر شده: {RESELLER_POINTS}
 • زمان درخواست: {datetime.now().strftime('%Y-%m-%d %H:%M')}
         """
-        await context.bot.send_message(ADMIN_ID, admin_message)
+        await context.bot.send_message(ADMIN_ID, admin_message, parse_mode=ParseMode.HTML)
     except Forbidden:
         pass
     
@@ -712,39 +713,39 @@ https://t.me/{context.bot.username}?start={user_id}
         # ارسال پیام به دعوت‌کننده
         try:
             bonus_message = f"""
-🎉 **تبریک! پاداش دریافت کردید**
+🎉 <b>تبریک! پاداش دریافت کردید</b>
 
 کاربری که با کد دعوت شما وارد ربات شده بود، اقدام به خرید پنل نمایندگی کرد!
 
-💰 **جزئیات پاداش:**
+💰 <b>جزئیات پاداش:</b>
 • مبلغ پاداش: {points} امتیاز
 • نوع خرید: پنل نمایندگی
 • موجودی جدید: {inviter[4] + points} امتیاز
 
 🙏 از همراهی شما سپاسگزاریم!
             """
-            await context.bot.send_message(inviter_id, bonus_message)
+            await context.bot.send_message(inviter_id, bonus_message, parse_mode=ParseMode.HTML)
         except Forbidden:
             pass
     
     # پیام تأیید نهایی به کاربر
     success_text = """
-✅ **درخواست شما با موفقیت ثبت شد!**
+✅ <b>درخواست شما با موفقیت ثبت شد!</b>
 
-🎉 **پنل نمایندگی شما در حال ساخت است**
+🎉 <b>پنل نمایندگی شما در حال ساخت است</b>
 
-📋 **اطلاعات تکمیلی:**
+📋 <b>اطلاعات تکمیلی:</b>
 • کد پیگیری: {str(user_id)[-6:]}
 • زمان ساخت: 24-48 ساعت کاری
 • پشتیبانی: 24 ساعته
 
-🔧 **مراحل بعدی:**
+🔧 <b>مراحل بعدی:</b>
 • به زودی با شما تماس خواهیم گرفت
 • اطلاعات لازم برای راه‌اندازی پنل دریافت می‌شود
 • دسترسی‌های پنل مدیریت برای شما فعال خواهد شد
 • آموزش کامل استفاده از پنل ارائه می‌شود
 
-🌟 **از انتخاب شما سپاسگزاریم!**
+🌟 <b>از انتخاب شما سپاسگزاریم!</b>
     """
     
     keyboard = [
@@ -752,7 +753,7 @@ https://t.me/{context.bot.username}?start={user_id}
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    await query.edit_message_text(success_text, reply_markup=reply_markup)
+    await query.edit_message_text(success_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
 
 
 async def token_received(update: Update, context: CallbackContext):
@@ -947,14 +948,15 @@ async def show_vip_menu(update: Update, context: CallbackContext):
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     text = (
-        "👻 **منوی سلف VIP**\n\n"
+        "👻 <b>منوی سلف VIP</b>\n\n"
         "لطفاً یکی از گزینه‌های زیر را انتخاب کنید:"
     )
     
     if is_callback:
-        await query.edit_message_text(text, reply_markup=reply_markup)
+        await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
     else:
-        await message.reply_text(text, reply_markup=reply_markup)
+        await message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+
 
 async def handle_text_messages(update: Update, context: CallbackContext):
     """این تابع پیام‌های متنی را مدیریت می‌کند"""
