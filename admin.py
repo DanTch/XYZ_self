@@ -3,9 +3,7 @@ from telegram.constants import ParseMode
 from telegram.ext import CallbackContext, CommandHandler, CallbackQueryHandler
 from database import Database
 from keyboards import admin_menu
-
-# تعریف مستقیم متغیر ADMIN_ID
-ADMIN_ID = 6270301002  # آیدی عددی ادمین
+from config import ADMIN_ID
 
 db = Database()
 
@@ -29,8 +27,6 @@ async def admin_add_points(update: Update, context: CallbackContext):
     
     if query.data == "admin_add_points":
         await query.edit_message_text("آیدی کاربر و مقدار امتیاز را با فرمت زیر ارسال کنید:\n\n/add_points user_id points")
-        # حذف شده: return ADMIN_ADD_POINTS
-        # به جای حالت مکالمه، فقط پیام راهنما ارسال می‌کنیم
 
 async def add_points_command(update: Update, context: CallbackContext):
     if str(update.message.from_user.id) != str(ADMIN_ID):

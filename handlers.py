@@ -49,7 +49,7 @@ async def start(update: Update, context: CallbackContext):
             try:
                 await context.bot.send_message(ADMIN_ID, user_details, reply_markup=markup)
             except Forbidden:
-                pass  # ادمین ربات را بلاک کرده
+                pass
         
         # ارسال پیام به دعوت‌کننده
         if invited_by:
@@ -63,7 +63,7 @@ async def start(update: Update, context: CallbackContext):
                         f"موجودی جدید: {inviter[4] + REFERRAL_BONUS}"
                     )
                 except Forbidden:
-                    pass  # کاربر ربات را بلاک کرده
+                    pass
     
     # ارسال پیام خوشامدگویی
     try:
