@@ -478,9 +478,9 @@ async def back_to_main_handler(update: Update, context: CallbackContext):
             "منوی اصلی:",
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("👻 سلف 𝐕𝐢𝐩 👻", callback_data="vip_menu")],
+                [InlineKeyboardButton("💎 پنل نمایندگی 💎", callback_data="reseller_menu")],
                 [InlineKeyboardButton("💍 خرید امتیاز 💍", callback_data="buy_points")],
-                [InlineKeyboardButton("💎 حساب کاربری 💎", callback_data="account")],
-                [InlineKeyboardButton("💎 پنل نمایندگی 💎", callback_data="reseller")]
+                [InlineKeyboardButton("💎 حساب کاربری 💎", callback_data="account")]
             ])
         )
     except Exception as e:
@@ -496,6 +496,7 @@ async def back_to_main_handler(update: Update, context: CallbackContext):
             # اگر آن هم ممکن نبود، به کاربر اطلاع بده
             await query.message.reply_text("خطایی در بازگشت به منوی اصلی رخ داد. لطفاً از دستور /start استفاده کنید.")
 
+            
 async def admin_confirm_payment(update: Update, context: CallbackContext):
     query = update.callback_query
     if query:
@@ -532,6 +533,7 @@ async def admin_confirm_payment(update: Update, context: CallbackContext):
             await query.edit_message_text("پرداخت رد شد.")
 
 async def reseller_handler(update: Update, context: CallbackContext):
+    """این تابع منوی پنل نمایندگی را نمایش می‌دهد"""
     query = update.callback_query
     if query:
         await query.answer()
@@ -544,65 +546,255 @@ async def reseller_handler(update: Update, context: CallbackContext):
     user = db.get_user(chat_id)
     
     if user[4] < RESELLER_POINTS:
+        insufficient_points_text = f"""
+❌ **موجودی کافی ندارید!**
+
+📊 **وضعیت امتیاز شما:**
+• امتیاز مورد نیاز: {RESELLER_POINTS} امتیاز
+• امتیاز فعلی شما: {user[4]} امتیاز
+• کمبود: {RESELLER_POINTS - user[4]} امتیاز
+
+💡 **راه‌های افزایش امتیاز:**
+• از دوستان خود با لینک دعوت دعوت کنید ({REFERRAL_BONUS} امتیاز به از هر نفر)
+• امتیاز خریداری کنید (از بخش خرید امتیاز)
+• در صورت خرید کاربران دعوت شده توسط شما، پاداش دریافت کنید
+
+🔗 **لینک دعوت شما:**
+https://t.me/{context.bot.username}?start={chat_id}
+        """
+        
+        keyboard = [
+            [InlineKeyboardButton("خرید امتیاز 💎", callback_data="buy_points")],
+            [InlineKeyboardButton("🔙 بازگشت به منوی اصلی", callback_data="back_to_main")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
         if query:
             await query.answer("موجودی کافی ندارید!", show_alert=True)
+            await query.edit_message_text(insufficient_points_text, reply_markup=reply_markup)
         else:
-            await message.reply_text("❌ موجودی کافی ندارید!\n\n"
-                                  f"امتیاز مورد نیاز: {RESELLER_POINTS}\n"
-                                  f"امتیاز شما: {user[4]}\n\n"
-                                  "برای افزایش امتیاز می‌توانید:\n"
-                                  "• از دوستان خود دعوت کنید\n"
-                                  "• امتیاز خریداری کنید")
+            await message.reply_text(insufficient_points_text, reply_markup=reply_markup)
         return
     
-    # نمایش پیام تحلیل و پردازش
-    if query:
-        await query.edit_message_text(
-            "⏳ در حال تحلیل درخواست شما...\n"
-            "لطفاً چند لحظه صبر کنید.",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("لغو", callback_data="cancel_reseller_purchase")]
-            ])
-        )
+    # نمایش منوی پنل نمایندگی
+    await show_reseller_menu(update, context)
+
+
+async def show_reseller_menu(update: Update, context: CallbackContext):
+    """این تابع منوی پنل نمایندگی را نمایش می‌دهد"""
+    if hasattr(update, 'callback_query') and update.callback_query:
+        query = update.callback_query
+        await query.answer()
+        message = query.message
+        is_callback = True
     else:
-        await message.reply_text(
-            "⏳ در حال تحلیل درخواست شما...\n"
-            "لطفاً چند لحظه صبر کنید.",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("لغو", callback_data="cancel_reseller_purchase")]
-            ])
-        )
+        message = update.message
+        is_callback = False
+    
+    keyboard = [
+        [InlineKeyboardButton("پنل نمایندگی چیست 😎؟", callback_data="what_is_reseller")],
+        [InlineKeyboardButton("خرید پنل نمایندگی 🔓", callback_data="buy_reseller_panel")],
+        [InlineKeyboardButton("🔙 بازگشت به منوی اصلی", callback_data="back_to_main")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    text = (
+        "👻 **💎 پنل نمایندگی 💎**\n\n"
+        "لطفاً یکی از گزینه‌های زیر را انتخاب کنید:"
+    )
+    
+    if is_callback:
+        await query.edit_message_text(text, reply_markup=reply_markup)
+    else:
+        await message.reply_text(text, reply_markup=reply_markup)
+
+async def reseller_what_is(update: Update, context: CallbackContext):
+    """این تابع توضیحات پنل نمایندگی را نمایش می‌دهد"""
+    query = update.callback_query
+    await query.answer()
+    
+    explanation_text = """
+🤖 **پنل نمایندگی چیست؟**
+
+پنل نمایندگی یک سیستم کامل برای ارائه خدمات سلف به کاربران شماست. با داشتن پنل نمایندگی، شما می‌توانید کسب‌وکار خود را در زمینه ارائه خدمات سلف راه‌اندازی کنید!
+
+📋 **ویژگی‌های پنل نمایندگی:**
+
+• 🔧 **ربات اختصاصی**: ما برای شما یک ربات مشابه ربات اصلی می‌سازیم
+• 🖥️ **پنل مدیریت کامل**: دسترسی به تمام امکانات مدیریت کاربران
+• 💰 **درآمدزایی**: امکان فروش سلف به کاربران و کسب درآمد
+• 🌐 **سرور اختصاصی**: ربات شما روی سرور جداگانه راه‌اندازی می‌شود
+• 👥 **ظرفیت 20 کاربر**: می‌توانید برای حداکثر 20 نفر سلف فعال کنید
+• 🛠️ **راه‌اندازی رایگان**: تمام مراحل نصب و تنظیمات توسط ما انجام می‌شود
+• 📞 **پشتیبانی 24 ساعته**: پشتیبانی کامل برای شما و کاربرانتان
+
+💎 **مزایای پنل نمایندگی:**
+
+✅ درآمدزایی مستقل از فروش سلف
+✅ برندینگ شخصی برای کسب‌وکار شما
+✅ دسترسی کامل به مدیریت کاربران
+✅ امکان تعریف پلن‌های قیمت‌گذاری مختلف
+✅ پشتیبانی فنی و آموزشی رایگان
+✅ به‌روزرسانی‌های رایگان و دائمی
+
+🌟 **این گزینه مناسب افرادی است که:**
+• قصد دارند خدمات سلف را ارائه دهند
+• به دنبال کسب درآمد از این حوزه هستند
+• می‌خواهند برند شخصی خود را بسازند
+• به دنبال یک کسب‌وکار آنلاین با سرمایه‌گذاری کم هستند
+
+برای بازگشت به منوی اصلی روی دکمه زیر کلیک کنید:
+    """
+    
+    keyboard = [
+        [InlineKeyboardButton("خرید پنل نمایندگی 🔓", callback_data="buy_reseller_panel")],
+        [InlineKeyboardButton("🔙 بازگشت به منوی اصلی", callback_data="back_to_main")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await query.edit_message_text(explanation_text, reply_markup=reply_markup)
+
+async def buy_reseller_panel(update: Update, context: CallbackContext):
+    """این تابع خرید پنل نمایندگی را مدیریت می‌کند"""
+    query = update.callback_query
+    await query.answer()
+    
+    user_id = query.from_user.id
+    user = db.get_user(user_id)
+    
+    # بررسی مجدد موجودی کاربر
+    if user[4] < RESELLER_POINTS:
+        await query.answer("موجودی کافی ندارید!", show_alert=True)
+        await show_reseller_menu(update, context)
+        return
+    
+    # نمایش پیام پردازش
+    processing_text = """
+⏳ **در حال پردازش درخواست شما...**
+لطفاً چند لحظه صبر کنید، درخواست شما در حال بررسی است.
+    """
+    
+    keyboard = [
+        [InlineKeyboardButton("لغو", callback_data="cancel_reseller")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await query.edit_message_text(processing_text, reply_markup=reply_markup)
     
     # شبیه‌سازی پردازش
     await asyncio.sleep(2)
     
-    # کسر امتیاز و درخواست توکن
-    db.add_points(chat_id, -RESELLER_POINTS)
+    # کسر امتیاز و ثبت درخواست
+    db.add_points(user_id, -RESELLER_POINTS)
     db.cursor.execute(
         "UPDATE users SET reseller_purchase_count = reseller_purchase_count + 1 WHERE user_id = ?",
-        (chat_id,)
+        (user_id,)
     )
     db.conn.commit()
     
-    if query:
-        await query.edit_message_text(
-            "✅ درخواست شما با موفقیت ثبت شد!\n\n"
-            "🔹 لطفاً توکن ربات خود را ارسال کنید\n"
-            "🔹 توکن باید از @BotFather دریافت شده باشد\n"
-            "🔹 پس از ارسال توکن، ساخت پنل شما آغاز می‌شود"
-        )
+    # ارسال به ادمین
+    try:
+        admin_message = f"""
+🆕 **درخواست جدید پنل نمایندگی**
+
+👤 **مشخصات کاربر:**
+• آیدی: {user_id}
+• نام: {user[1]} {user[2]}
+• یوزرنیم: @{user[3] if user[3] else 'ندارد'}
+
+📋 **جزئیات درخواست:**
+• نوع درخواست: پنل نمایندگی
+• امتیاز کسر شده: {RESELLER_POINTS}
+• زمان درخواست: {datetime.now().strftime('%Y-%m-%d %H:%M')}
+        """
+        await context.bot.send_message(ADMIN_ID, admin_message)
+    except Forbidden:
+        pass
+    
+    # محاسبه پاداش دعوت‌کنندگان
+    bonuses = calculate_referral_bonus(user_id, RESELLER_REFERRAL_BONUS, db)
+    for inviter_id, points in bonuses.items():
+        db.add_points(inviter_id, points)
+        inviter = db.get_user(inviter_id)
+        
+        # ارسال پیام به دعوت‌کننده
+        try:
+            bonus_message = f"""
+🎉 **تبریک! پاداش دریافت کردید**
+
+کاربری که با کد دعوت شما وارد ربات شده بود، اقدام به خرید پنل نمایندگی کرد!
+
+💰 **جزئیات پاداش:**
+• مبلغ پاداش: {points} امتیاز
+• نوع خرید: پنل نمایندگی
+• موجودی جدید: {inviter[4] + points} امتیاز
+
+🙏 از همراهی شما سپاسگزاریم!
+            """
+            await context.bot.send_message(inviter_id, bonus_message)
+        except Forbidden:
+            pass
+    
+    # پیام تأیید نهایی به کاربر
+    success_text = """
+✅ **درخواست شما با موفقیت ثبت شد!**
+
+🎉 **پنل نمایندگی شما در حال ساخت است**
+
+📋 **اطلاعات تکمیلی:**
+• کد پیگیری: {str(user_id)[-6:]}
+• زمان ساخت: 24-48 ساعت کاری
+• پشتیبانی: 24 ساعته
+
+🔧 **مراحل بعدی:**
+• به زودی با شما تماس خواهیم گرفت
+• اطلاعات لازم برای راه‌اندازی پنل دریافت می‌شود
+• دسترسی‌های پنل مدیریت برای شما فعال خواهد شد
+• آموزش کامل استفاده از پنل ارائه می‌شود
+
+🌟 **از انتخاب شما سپاسگزاریم!**
+    """
+    
+    keyboard = [
+        [InlineKeyboardButton("🔙 بازگشت به منوی اصلی", callback_data="back_to_main")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await query.edit_message_text(success_text, reply_markup=reply_markup)
+
+async def main_menu_buttons_handler(update: Update, context: CallbackContext):
+    """این تابع دکمه‌های اصلی منو را مدیریت می‌کند"""
+    text = update.message.text
+    user_id = update.message.from_user.id
+    
+    print(f"دکمه فشرده شده: '{text}' توسط کاربر {user_id}")  # لاگ اصلی
+    
+    if text == "👻 سلف 𝐕𝐢𝐩 👻":
+        print("در حال نمایش منوی VIP...")
+        await show_vip_menu(update, context)
+    elif text == "🫠 سلف رایگان 🫠":
+        print("در حال نمایش سلف رایگان...")
+        await free_self_handler(update, context)
+    elif text == "🫠 امتیاز رایگان 🫠":
+        print("در حال نمایش امتیاز رایگان...")
+        await free_self_handler(update, context)
+    elif text == "💍 خرید امتیاز 💍":
+        print("در حال نمایش منوی خرید امتیاز...")
+        await show_buy_points_menu(update, context)
+    elif text == "💎 حساب کاربری 💎":
+        print("در حال نمایش حساب کاربری...")
+        await account_handler(update, context)
+    elif text == "💎 پنل نمایندگی 💎":
+        print("در حال نمایش پنل نمایندگی...")
+        await show_reseller_menu(update, context)  # تغییر این خط
     else:
-        await message.reply_text(
-            "✅ درخواست شما با موفقیت ثبت شد!\n\n"
-            "🔹 لطفاً توکن ربات خود را ارسال کنید\n"
-            "🔹 توکن باید از @BotFather دریافت شده باشد\n"
-            "🔹 پس از ارسال توکن، ساخت پنل شما آغاز می‌شود"
+        print(f"دکمه ناشناخته: '{text}'")
+        # پیام پیش‌فرض برای دکمه‌های ناشناخته
+        await update.message.reply_text(
+            "دکمه ناشناخته است. لطفا از منوی اصلی استفاده کنید.",
+            reply_markup=main_menu()
         )
-    
-    # تنظیم وضعیت کاربر برای انتظار توکن
-    context.user_data['state'] = AWAITING_TOKEN
-    
-    return AWAITING_TOKEN
+
 
 async def token_received(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id

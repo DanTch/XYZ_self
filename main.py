@@ -93,6 +93,11 @@ async def main():
         app.add_handler(CallbackQueryHandler(buy_points_handler, pattern='^buy_custom$'))
         app.add_handler(CallbackQueryHandler(buy_points_handler, pattern='^buy_points$'))
         app.add_handler(CommandHandler("debug_payment", debug_payment_status))
+
+        # در main.py، بعد از هندلرهای اصلی
+        app.add_handler(CallbackQueryHandler(reseller_what_is, pattern='^what_is_reseller$'))
+        app.add_handler(CallbackQueryHandler(buy_reseller_panel, pattern='^buy_reseller_panel$'))
+        app.add_handler(CallbackQueryHandler(show_reseller_menu, pattern='^reseller_menu$'))
         
         # شروع ربات
         await app.initialize()
