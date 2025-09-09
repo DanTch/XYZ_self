@@ -13,6 +13,22 @@ db = Database()
 # حالت‌های مکالمه
 SELECTING_POINTS, AWAITING_PAYMENT, AWAITING_TOKEN, CUSTOM_POINTS = range(4)
 
+# دیکشنری برای ذخیره وضعیت کاربران
+user_states = {}
+
+async def get_user_state(user_id):
+    """دریافت وضعیت کاربر"""
+    return user_states.get(user_id, None)
+
+async def set_user_state(user_id, state):
+    """تنظیم وضعیت کاربر"""
+    user_states[user_id] = state
+
+async def clear_user_state(user_id):
+    """پاک کردن وضعیت کاربر"""
+    if user_id in user_states:
+        del user_states[user_id]
+
 async def start(update: Update, context: CallbackContext):
     user = update.message.from_user
     chat_id = user.id
@@ -338,6 +354,9 @@ async def reseller_handler(update: Update, context: CallbackContext):
     )
     db.conn.commit()
     
+    # تنظیم وضعیت کاربر برای انتظار توکن
+    await set_user_state(chat_id, AWAITING_TOKEN)
+    
     if query:
         await query.edit_message_text(
             "✅ درخواست شما با موفقیت ثبت شد!\n\n"
@@ -352,18 +371,19 @@ async def reseller_handler(update: Update, context: CallbackContext):
             "🔹 توکن باید از @BotFather دریافت شده باشد\n"
             "🔹 پس از ارسال توکن، ساخت پنل شما آغاز می‌شود"
         )
-    
-    # ذخیره وضعیت در user_data برای اطمینان
-    context.user_data['awaiting_token'] = True
     return AWAITING_TOKEN
 
 async def token_received(update: Update, context: CallbackContext):
-    # بررسی اینکه آیا کاربر در حالت انتظار توکن است
-    if not context.user_data.get('awaiting_token', False):
-        await update.message.reply_text("درخواست نامعتبر است. لطفاً از منوی اصلی اقدام کنید.")
-        return ConversationHandler.END
-    
     user_id = update.message.from_user.id
+    
+    # بررسی وضعیت کاربر
+    state = await get_user_state(user_id)
+    
+    # اگر کاربر در حالت انتظار توکن نیست
+    if state != AWAITING_TOKEN:
+        await update.message.reply_text("درخواست نامعتبر است. لطفاً از منوی اصلی اقدام کنید.")
+        return
+    
     token = update.message.text.strip()
     
     # بررسی اعتبار توکن
@@ -372,10 +392,10 @@ async def token_received(update: Update, context: CallbackContext):
             "❌ توکن وارد شده معتبر نیست!\n\n"
             "لطفاً توکن صحیح را که از @BotFather دریافت کرده‌اید وارد کنید."
         )
-        return AWAITING_TOKEN
+        return
     
-    # پاک کردن وضعیت انتظار توکن
-    context.user_data['awaiting_token'] = False
+    # پاک کردن وضعیت کاربر
+    await clear_user_state(user_id)
     
     # ارسال به ادمین
     try:
@@ -415,7 +435,6 @@ async def token_received(update: Update, context: CallbackContext):
     
     return ConversationHandler.END
 
-    
 async def account_handler(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
     user = db.get_user(user_id)
@@ -448,6 +467,8 @@ async def free_self_handler(update: Update, context: CallbackContext):
     await update.message.reply_text(message, reply_markup=main_menu())
 
 async def cancel_handler(update: Update, context: CallbackContext):
+    user_id = update.message.from_user.id
+    await clear_user_state(user_id)
     await update.message.reply_text("عملیات لغو شد.", reply_markup=main_menu())
     return ConversationHandler.END
 
