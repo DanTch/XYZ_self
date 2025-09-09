@@ -44,7 +44,12 @@ async def main():
         app.add_handler(CallbackQueryHandler(admin_add_points, pattern='^admin_add_points$'))
         app.add_handler(CallbackQueryHandler(admin_sales_report, pattern='^admin_sales_report$'))
         app.add_handler(CallbackQueryHandler(admin_new_users, pattern='^admin_new_users$'))
-        app.add_handler(CallbackQueryHandler(lambda u, c: u.message.reply_text("منوی اصلی:", reply_markup=main_menu()), pattern='^back_to_main$'))
+        app.add_handler(CallbackQueryHandler(back_to_main_handler, pattern='^back_to_main$'))
+        # در main.py، بعد از هندلرهای اصلی
+        app.add_handler(CallbackQueryHandler(show_vip_menu, pattern='^vip_menu$'))
+        app.add_handler(CallbackQueryHandler(show_buy_points_menu, pattern='^buy_points$'))
+        app.add_handler(CallbackQueryHandler(account_handler, pattern='^account$'))
+        app.add_handler(CallbackQueryHandler(reseller_handler, pattern='^reseller$'))
         
         # در main.py
         conv_handler = ConversationHandler(

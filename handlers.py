@@ -462,6 +462,35 @@ async def cancel_payment_handler(update: Update, context: CallbackContext):
     return ConversationHandler.END
 
 
+async def back_to_main_handler(update: Update, context: CallbackContext):
+    """این تابع دکمه بازگشت به منوی اصلی را مدیریت می‌کند"""
+    query = update.callback_query
+    await query.answer()
+    
+    try:
+        # تلاش برای ویرایش پیام فعلی
+        await query.edit_message_text(
+            "منوی اصلی:",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("👻 سلف 𝐕𝐢𝐩 👻", callback_data="vip_menu")],
+                [InlineKeyboardButton("💍 خرید امتیاز 💍", callback_data="buy_points")],
+                [InlineKeyboardButton("💎 حساب کاربری 💎", callback_data="account")],
+                [InlineKeyboardButton("💎 پنل نمایندگی 💎", callback_data="reseller")]
+            ])
+        )
+    except Exception as e:
+        print(f"خطا در ویرایش پیام: {e}")
+        # اگر ویرایش پیام ممکن نبود، یک پیام جدید ارسال کن
+        try:
+            await query.message.reply_text(
+                "منوی اصلی:",
+                reply_markup=main_menu()
+            )
+        except Exception as e2:
+            print(f"خطا در ارسال پیام جدید: {e2}")
+            # اگر آن هم ممکن نبود، به کاربر اطلاع بده
+            await query.message.reply_text("خطایی در بازگشت به منوی اصلی رخ داد. لطفاً از دستور /start استفاده کنید.")
+
 async def admin_confirm_payment(update: Update, context: CallbackContext):
     query = update.callback_query
     if query:
@@ -762,7 +791,7 @@ async def show_vip_menu(update: Update, context: CallbackContext):
         await query.edit_message_text(text, reply_markup=reply_markup)
     else:
         await message.reply_text(text, reply_markup=reply_markup)
-
+        
 async def handle_text_messages(update: Update, context: CallbackContext):
     """این تابع پیام‌های متنی را مدیریت می‌کند"""
     user_id = update.message.from_user.id
