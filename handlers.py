@@ -284,39 +284,48 @@ async def buy_points_handler(update: Update, context: CallbackContext):
     
     if query and query.data.startswith("buy_"):
         print(f"در حال پردازش خرید: {query.data}")  # لاگ برای دیباگ
-        try:
-            amount = int(query.data.split("_")[1])
-            user_id = query.from_user.id
-            
-            # ذخیره درخواست پرداخت
-            context.user_data["pending_payment"] = {
-                "amount": amount,
-                "user_id": user_id
-            }
-            
-            await query.edit_message_text(
-                f"لطفا مبلغ {amount} تومان را به شماره کارت زیر واریز کنید:\n\n"
-                f"شماره کارت: {CARD_NUMBER}\n"
-                f"به نام: {CARD_OWNER}\n\n"
-                f"پس از واریز، فیش پرداخت را ارسال کنید.\n\n"
-                f"⏰ مهلت پرداخت: 15 دقیقه",
-                reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("لغو خرید", callback_data="cancel_payment")]
-                ])
-            )
-            
-            print(f"وضعیت کاربر {user_id} به AWAITING_PAYMENT تغییر کرد")  # لاگ برای دیباگ
-            return AWAITING_PAYMENT
-            
-        except (IndexError, ValueError) as e:
-            print(f"خطا در پردازش خرید: {e}")  # لاگ خطا
-            await query.edit_message_text("خطا در پردازش درخواست. لطفا دوباره تلاش کنید.")
+        
+        # بررسی آیا داده کالبک با الگوی عددی مطابقت دارد
+        import re
+        if re.match(r'^buy_\d+$', query.data):
+            try:
+                amount = int(query.data.split("_")[1])
+                user_id = query.from_user.id
+                
+                # ذخیره درخواست پرداخت
+                context.user_data["pending_payment"] = {
+                    "amount": amount,
+                    "user_id": user_id
+                }
+                
+                await query.edit_message_text(
+                    f"لطفا مبلغ {amount} تومان را به شماره کارت زیر واریز کنید:\n\n"
+                    f"شماره کارت: {CARD_NUMBER}\n"
+                    f"به نام: {CARD_OWNER}\n\n"
+                    f"پس از واریز، فیش پرداخت را ارسال کنید.\n\n"
+                    f"⏰ مهلت پرداخت: 15 دقیقه",
+                    reply_markup=InlineKeyboardMarkup([
+                        [InlineKeyboardButton("لغو خرید", callback_data="cancel_payment")]
+                    ])
+                )
+                
+                print(f"وضعیت کاربر {user_id} به AWAITING_PAYMENT تغییر کرد")  # لاگ برای دیباگ
+                return AWAITING_PAYMENT
+                
+            except (IndexError, ValueError) as e:
+                print(f"خطا در پردازش خرید: {e}")  # لاگ خطا
+                await query.edit_message_text("خطا در پردازش درخواست. لطفا دوباره تلاش کنید.")
+                return ConversationHandler.END
+        
+        elif query.data == "buy_custom":
+            print("در حال درخواست خرید امتیاز دلخواه...")  # لاگ برای دیباگ
+            await query.edit_message_text("مقدار امتیاز مورد نظر را وارد کنید:")
+            return CUSTOM_POINTS
+        
+        else:
+            print(f"داده کالبک ناشناخته: {query.data}")  # لاگ برای دیباگ
+            await query.edit_message_text("داده کالبک ناشناخته است.")
             return ConversationHandler.END
-    
-    elif query and query.data == "buy_custom":
-        print("در حال درخواست خرید امتیاز دلخواه...")  # لاگ برای دیباگ
-        await query.edit_message_text("مقدار امتیاز مورد نظر را وارد کنید:")
-        return CUSTOM_POINTS
 
 
 async def show_buy_points_menu(update: Update, context: CallbackContext):
@@ -354,7 +363,10 @@ async def show_buy_points_menu(update: Update, context: CallbackContext):
         await query.edit_message_text(text, reply_markup=reply_markup)
     else:
         await message.reply_text(text, reply_markup=reply_markup)
+    
+    print("منوی خرید امتیاز نمایش داده شد")  # لاگ برای دیباگ
 
+    
 async def payment_received(update: Update, context: CallbackContext):
     print("payment_received فراخوانی شد")  # لاگ برای دیباگ
     
@@ -439,7 +451,7 @@ async def cancel_payment_handler(update: Update, context: CallbackContext):
     
     return ConversationHandler.END
 
-    
+
 async def admin_confirm_payment(update: Update, context: CallbackContext):
     query = update.callback_query
     if query:

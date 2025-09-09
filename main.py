@@ -46,7 +46,7 @@ async def main():
         app.add_handler(CallbackQueryHandler(admin_new_users, pattern='^admin_new_users$'))
         app.add_handler(CallbackQueryHandler(lambda u, c: u.message.reply_text("منوی اصلی:", reply_markup=main_menu()), pattern='^back_to_main$'))
         
-        # هندلرهای مکالمه با تنظیمات اصلاح شده
+        # در main.py
         conv_handler = ConversationHandler(
             entry_points=[
                 CallbackQueryHandler(buy_points_handler, pattern='^buy_points$'),
@@ -54,8 +54,8 @@ async def main():
             ],
             states={
                 SELECTING_POINTS: [
-                    CallbackQueryHandler(buy_points_handler, pattern='^buy_\d+$'),  # برای دکمه‌های عددی
-                    CallbackQueryHandler(buy_points_handler, pattern='^buy_custom$')  # برای دکمه دلخواه
+                    CallbackQueryHandler(buy_points_handler, pattern=r'^buy_\d+$'),  # استفاده از r برای رشته خام
+                    CallbackQueryHandler(buy_points_handler, pattern='^buy_custom$')
                 ],
                 AWAITING_PAYMENT: [
                     MessageHandler(filters.PHOTO, payment_received),
@@ -78,6 +78,12 @@ async def main():
 
         # سپس هندلرهای دیگر
         app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text_messages))
+
+        # در main.py، بعد از تعریف ConversationHandler
+        # اضافه کردن هندلر کالبک برای دکمه‌های عددی
+        app.add_handler(CallbackQueryHandler(buy_points_handler, pattern=r'^buy_\d+$'))
+        app.add_handler(CallbackQueryHandler(buy_points_handler, pattern='^buy_custom$'))
+        app.add_handler(CallbackQueryHandler(buy_points_handler, pattern='^buy_points$'))
         
         # شروع ربات
         await app.initialize()
