@@ -453,11 +453,11 @@ async def cancel_payment_handler(update: Update, context: CallbackContext):
     return ConversationHandler.END
 
 async def debug_conversation(update: Update, context: CallbackContext):
-user_id = update.message.from_user.id
-print(f"وضعیت مکالمه کاربر {user_id}:")
-print(f"pending_payment: {context.user_data.get('pending_payment')}")
-print(f"conversation_state: {context.user_data.get('conversation_state')}")
-await update.message.reply_text("وضعیت مکالمه در کنسول چاپ شد")
+    user_id = update.message.from_user.id
+    print(f"وضعیت مکالمه کاربر {user_id}:")
+    print(f"pending_payment: {context.user_data.get('pending_payment')}")
+    print(f"conversation_state: {context.user_data.get('conversation_state')}")
+    await update.message.reply_text("وضعیت مکالمه در کنسول چاپ شد")
 
 async def admin_confirm_payment(update: Update, context: CallbackContext):
     query = update.callback_query
