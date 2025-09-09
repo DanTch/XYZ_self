@@ -352,11 +352,30 @@ async def reseller_handler(update: Update, context: CallbackContext):
             "🔹 توکن باید از @BotFather دریافت شده باشد\n"
             "🔹 پس از ارسال توکن، ساخت پنل شما آغاز می‌شود"
         )
+    
+    # ذخیره وضعیت در user_data برای اطمینان
+    context.user_data['awaiting_token'] = True
     return AWAITING_TOKEN
 
 async def token_received(update: Update, context: CallbackContext):
+    # بررسی اینکه آیا کاربر در حالت انتظار توکن است
+    if not context.user_data.get('awaiting_token', False):
+        await update.message.reply_text("درخواست نامعتبر است. لطفاً از منوی اصلی اقدام کنید.")
+        return ConversationHandler.END
+    
     user_id = update.message.from_user.id
-    token = update.message.text
+    token = update.message.text.strip()
+    
+    # بررسی اعتبار توکن
+    if not token.startswith('1') or len(token) < 30:
+        await update.message.reply_text(
+            "❌ توکن وارد شده معتبر نیست!\n\n"
+            "لطفاً توکن صحیح را که از @BotFather دریافت کرده‌اید وارد کنید."
+        )
+        return AWAITING_TOKEN
+    
+    # پاک کردن وضعیت انتظار توکن
+    context.user_data['awaiting_token'] = False
     
     # ارسال به ادمین
     try:
@@ -385,14 +404,18 @@ async def token_received(update: Update, context: CallbackContext):
         except Forbidden:
             pass
     
+    # ارسال پیام تأیید به کاربر
     await update.message.reply_text(
         "✅ توکن شما با موفقیت دریافت شد!\n\n"
         "🔹 پنل نمایندگی شما در حال ساخت است\n"
         "🔹 به زودی با شما تماس خواهیم گرفت\n"
-        "🔹 مدت زمان ساخت: 24-48 ساعت"
+        "🔹 مدت زمان ساخت: 24-48 ساعت\n\n"
+        "📋 کد پیگیری شما: " + str(user_id)[-6:]
     )
+    
     return ConversationHandler.END
 
+    
 async def account_handler(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
     user = db.get_user(user_id)
