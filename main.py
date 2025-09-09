@@ -58,16 +58,18 @@ async def main():
                 CUSTOM_POINTS: [MessageHandler(filters.TEXT & ~filters.COMMAND, custom_points_handler)]
             },
             fallbacks=[CommandHandler('cancel', cancel_handler)],
-            per_message=False  # تنظیم برای رفع هشدار
+            per_message=False,  # تنظیم برای رفع هشدار
+            name="payment_conversation"  # نام برای دیباگ
         )
+
+        # اضافه کردن ConversationHandler با اولویت بالا
         app.add_handler(conv_handler)
-        
+
+        # سپس هندلرهای دیگر
+        app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text_messages))
+
         app.add_handler(CommandHandler("start", start))
         app.add_handler(CommandHandler("admin", admin_panel))
-        
-        # هندلر مستقیم برای پیام‌های متنی (این خط را اضافه کنید)
-        app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text_messages))      
-
 
         # شروع ربات
         await app.initialize()
