@@ -293,9 +293,6 @@ async def buy_points_handler(update: Update, context: CallbackContext):
                 "user_id": user_id
             }
             
-            # ذخیره وضعیت مکالمه
-            context.user_data["conversation_state"] = AWAITING_PAYMENT
-            
             await query.edit_message_text(
                 f"لطفا مبلغ {amount} تومان را به شماره کارت زیر واریز کنید:\n\n"
                 f"شماره کارت: {CARD_NUMBER}\n"
@@ -308,7 +305,7 @@ async def buy_points_handler(update: Update, context: CallbackContext):
             )
             
             print(f"وضعیت کاربر {user_id} به AWAITING_PAYMENT تغییر کرد")  # لاگ برای دیباگ
-            return AWAITING_PAYMENT
+            return AWAITING_PAYMENT  # این خط وضعیت را برمی‌گرداند
             
         except (IndexError, ValueError) as e:
             print(f"خطا در پردازش خرید: {e}")  # لاگ خطا
@@ -318,6 +315,7 @@ async def buy_points_handler(update: Update, context: CallbackContext):
     elif query and query.data == "buy_custom":
         await query.edit_message_text("مقدار امتیاز مورد نظر را وارد کنید:")
         return CUSTOM_POINTS
+
 
 
 async def show_buy_points_menu(update: Update, context: CallbackContext):
@@ -363,20 +361,11 @@ async def payment_received(update: Update, context: CallbackContext):
     
     print(f"عکس دریافت شده از کاربر {user_id}")  # لاگ برای دیباگ
     
-    # بررسی وضعیت مکالمه
-    current_state = context.user_data.get("conversation_state")
-    print(f"وضعیت فعلی مکالمه: {current_state}")  # لاگ برای دیباگ
-    
-    if current_state != AWAITING_PAYMENT:
-        print("کاربر در حالت انتظار پرداخت نیست")  # لاگ برای دیباگ
-        await update.message.reply_text("شما در حال انتظار پرداخت نیستید. لطفاً از منوی اصلی اقدام کنید.")
-        return ConversationHandler.END
-    
     # بررسی وجود پرداخت در انتظار
     payment_data = context.user_data.get("pending_payment")
     if not payment_data:
         print("هیچ پرداخت در انتظاری وجود ندارد")  # لاگ برای دیباگ
-        await update.message.reply_text("هیچ پرداخت در انتظاری وجود ندارد. لطفاً از منوی اصلی اقدام کنید.")
+        await update.message.reply_text("شما در حال انتظار پرداخت نیستید. لطفاً از منوی اصلی اقدام کنید.")
         return ConversationHandler.END
     
     print(f"پرداخت در انتظار پیدا شد: {payment_data}")  # لاگ برای دیباگ
@@ -413,11 +402,9 @@ async def payment_received(update: Update, context: CallbackContext):
             "پس از بررسی توسط ادمین، امتیازها به حساب شما اضافه خواهد شد."
         )
         
-        # پاک کردن داده‌های مکالمه
+        # پاک کردن پرداخت در انتظار
         if "pending_payment" in context.user_data:
             del context.user_data["pending_payment"]
-        if "conversation_state" in context.user_data:
-            del context.user_data["conversation_state"]
         
     except Exception as e:
         print(f"خطا در پردازش پرداخت: {e}")  # لاگ خطا
@@ -429,6 +416,7 @@ async def payment_received(update: Update, context: CallbackContext):
     return ConversationHandler.END
 
 
+
 async def cancel_payment_handler(update: Update, context: CallbackContext):
     query = update.callback_query
     await query.answer()
@@ -436,11 +424,9 @@ async def cancel_payment_handler(update: Update, context: CallbackContext):
     user_id = query.from_user.id
     print(f"درخواست لغو پرداخت از کاربر {user_id}")  # لاگ برای دیباگ
     
-    # پاک کردن داده‌های مکالمه
+    # پاک کردن پرداخت در انتظار
     if "pending_payment" in context.user_data:
         del context.user_data["pending_payment"]
-    if "conversation_state" in context.user_data:
-        del context.user_data["conversation_state"]
     
     await query.edit_message_text(
         "❌ پرداخت لغو شد\n"
