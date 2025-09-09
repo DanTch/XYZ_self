@@ -4,14 +4,17 @@ from telegram.ext import CallbackContext, CommandHandler, CallbackQueryHandler
 from database import Database
 from keyboards import admin_menu
 
-# تعریف مستقیم متغیر ADMIN_ID به جای import
-# این روش مطمئن‌تر است
-ADMIN_ID = 123456789  # آیدی عددی ادمین را اینجا قرار دهید
+# تعریف مستقیم متغیر ADMIN_ID
+ADMIN_ID = 6270301002  # آیدی عددی ادمین را اینجا قرار دهید
 
 db = Database()
 
 async def admin_panel(update: Update, context: CallbackContext):
-    if update.message.from_user.id != ADMIN_ID:
+    # نمایش آیدی برای عیب‌یابی
+    print(f"آیدی کاربر: {update.message.from_user.id}")
+    print(f"آیدی ادمین: {ADMIN_ID}")
+    
+    if str(update.message.from_user.id) != str(ADMIN_ID):
         await update.message.reply_text("شما دسترسی ادمین ندارید!")
         return
     
@@ -26,7 +29,7 @@ async def admin_add_points(update: Update, context: CallbackContext):
         return ADMIN_ADD_POINTS
 
 async def add_points_command(update: Update, context: CallbackContext):
-    if update.message.from_user.id != ADMIN_ID:
+    if str(update.message.from_user.id) != str(ADMIN_ID):
         return
     
     try:
