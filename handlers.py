@@ -318,13 +318,42 @@ async def buy_points_handler(update: Update, context: CallbackContext):
             return
 
 
-            
+
 
 async def show_buy_points_menu(update: Update, context: CallbackContext):
-    await update.message.reply_text(
-        "لطفا امتیاز مورد نظر خود را از بین گزینه‌های انتخاب کنید",
-        reply_markup=buy_points_menu()
+    """این تابع منوی خرید امتیاز را نمایش می‌دهد"""
+    # بررسی اینکه آیا از طریق CallbackQuery فراخوانی شده است یا نه
+    if hasattr(update, 'callback_query') and update.callback_query:
+        query = update.callback_query
+        await query.answer()
+        message = query.message
+        is_callback = True
+    else:
+        message = update.message
+        is_callback = False
+    
+    keyboard = [
+        [InlineKeyboardButton("10 امتیاز (10 تومان)", callback_data="buy_10")],
+        [InlineKeyboardButton("25 امتیاز (25 تومان)", callback_data="buy_25")],
+        [InlineKeyboardButton("50 امتیاز (45 تومان)", callback_data="buy_50")],
+        [InlineKeyboardButton("100 امتیاز (85 تومان)", callback_data="buy_100")],
+        [InlineKeyboardButton("250 امتیاز (200 تومان)", callback_data="buy_250")],
+        [InlineKeyboardButton("خرید امتیاز دلخواه", callback_data="buy_custom")],
+        [InlineKeyboardButton("🔙 بازگشت به منوی اصلی", callback_data="back_to_main")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    text = (
+        "💎 **منوی خرید امتیاز**\n\n"
+        "لطفاً یکی از گزینه‌های زیر را انتخاب کنید:"
     )
+    
+    # اگر از طریق CallbackQuery فراخوانی شده باشد، پیام را ویرایش کن
+    if is_callback:
+        await query.edit_message_text(text, reply_markup=reply_markup)
+    else:
+        await message.reply_text(text, reply_markup=reply_markup)
+        
 
 async def payment_received(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
@@ -639,6 +668,15 @@ async def main_menu_buttons_handler(update: Update, context: CallbackContext):
 
 async def show_vip_menu(update: Update, context: CallbackContext):
     """این تابع منوی VIP را نمایش می‌دهد"""
+    if hasattr(update, 'callback_query') and update.callback_query:
+        query = update.callback_query
+        await query.answer()
+        message = query.message
+        is_callback = True
+    else:
+        message = update.message
+        is_callback = False
+    
     keyboard = [
         [InlineKeyboardButton("سلف چیست 🤖 ?", callback_data="what_is_self")],
         [InlineKeyboardButton("خرید سلف vip 🔥", callback_data="buy_vip")],
@@ -646,11 +684,17 @@ async def show_vip_menu(update: Update, context: CallbackContext):
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    await update.message.reply_text(
+    text = (
         "👻 **منوی سلف VIP**\n\n"
-        "لطفاً یکی از گزینه‌های زیر را انتخاب کنید:",
-        reply_markup=reply_markup
+        "لطفاً یکی از گزینه‌های زیر را انتخاب کنید:"
     )
+    
+    if is_callback:
+        await query.edit_message_text(text, reply_markup=reply_markup)
+    else:
+        await message.reply_text(text, reply_markup=reply_markup)
+
+
 
 # تابع جدید برای مدیریت پیام‌های متنی
 async def handle_text_messages(update: Update, context: CallbackContext):
