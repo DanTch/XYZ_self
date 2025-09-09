@@ -60,9 +60,13 @@ async def main():
                 AWAITING_TOKEN: [MessageHandler(filters.TEXT & ~filters.COMMAND, token_received)],
                 CUSTOM_POINTS: [MessageHandler(filters.TEXT & ~filters.COMMAND, custom_points_handler)]
             },
-            fallbacks=[CommandHandler('cancel', cancel_handler)],
+            fallbacks=[
+                CommandHandler('cancel', cancel_handler),
+                CallbackQueryHandler(cancel_payment_handler, pattern='^cancel_payment$')
+            ],
             per_message=False,
-            name="payment_conversation"
+            name="payment_conversation",
+            persistent=True  # این خط مهم است
         )
 
         # اضافه کردن ConversationHandler با اولویت بالا
@@ -73,6 +77,7 @@ async def main():
 
         app.add_handler(CommandHandler("start", start))
         app.add_handler(CommandHandler("admin", admin_panel))
+        app.add_handler(CommandHandler("debug", debug_conversation))
 
         # شروع ربات
         await app.initialize()
