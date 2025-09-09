@@ -344,14 +344,23 @@ async def show_buy_points_menu(update: Update, context: CallbackContext):
         is_callback = False
     
     keyboard = [
-        [InlineKeyboardButton("10 امتیاز (10 تومان)", callback_data="buy_10")],
-        [InlineKeyboardButton("25 امتیاز (25 تومان)", callback_data="buy_25")],
-        [InlineKeyboardButton("50 امتیاز (45 تومان)", callback_data="buy_50")],
-        [InlineKeyboardButton("100 امتیاز (95 تومان)", callback_data="buy_95")],  # تغییر این خط
-        [InlineKeyboardButton("200 امتیاز (180 تومان)", callback_data="buy_180")],
-        [InlineKeyboardButton("250 امتیاز (200 تومان)", callback_data="buy_200")],
-        [InlineKeyboardButton("خرید امتیاز دلخواه", callback_data="buy_custom")],
-        [InlineKeyboardButton("🔙 بازگشت به منوی اصلی", callback_data="back_to_main")]
+        [
+            InlineKeyboardButton("10 امتیاز (10 تومان)", callback_data="buy_10"),
+            InlineKeyboardButton("25 امتیاز (25 تومان)", callback_data="buy_25")
+        ],
+        [
+            InlineKeyboardButton("50 امتیاز (45 تومان)", callback_data="buy_50"),
+            InlineKeyboardButton("100 امتیاز (95 تومان)", callback_data="buy_100")
+        ],
+        [
+            InlineKeyboardButton("200 امتیاز (180 تومان)", callback_data="buy_200"),
+            InlineKeyboardButton("250 امتیاز (200 تومان)", callback_data="buy_250")
+        ],
+        [
+            InlineKeyboardButton("خرید امتیاز دلخواه", callback_data="buy_custom")],
+        [
+            InlineKeyboardButton("🔙 بازگشت به منوی اصلی", callback_data="back_to_main")
+        ]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
@@ -365,7 +374,6 @@ async def show_buy_points_menu(update: Update, context: CallbackContext):
         await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
     else:
         await message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
-
 
 
 async def payment_received(update: Update, context: CallbackContext):
