@@ -320,6 +320,8 @@ async def buy_points_handler(update: Update, context: CallbackContext):
         elif query.data == "buy_custom":
             print("در حال درخواست خرید امتیاز دلخواه...")  # لاگ برای دیباگ
             await query.edit_message_text("مقدار امتیاز مورد نظر را وارد کنید:")
+            # تنظیم وضعیت کاربر به صورت دستی
+            context.user_data['state'] = CUSTOM_POINTS
             return CUSTOM_POINTS
         
         else:
@@ -380,7 +382,7 @@ async def payment_received(update: Update, context: CallbackContext):
     if not payment_data:
         print("هیچ پرداخت در انتظاری وجود ندارد")  # لاگ برای دیباگ
         await update.message.reply_text("شما در حال انتظار پرداخت نیستید. لطفاً از منوی اصلی اقدام کنید.")
-        return
+        return ConversationHandler.END
     
     print(f"پرداخت در انتظار پیدا شد: {payment_data}")  # لاگ برای دیباگ
     
@@ -426,7 +428,10 @@ async def payment_received(update: Update, context: CallbackContext):
             "❌ خطایی در پردازش پرداخت رخ داد\n"
             "لطفاً دوباره تلاش کنید یا با پشتیبانی تماس بگیرید."
         )
+    
+    return ConversationHandler.END
 
+    
 async def debug_payment_status(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
     payment_data = context.user_data.get("pending_payment")
@@ -700,6 +705,8 @@ async def cancel_handler(update: Update, context: CallbackContext):
     return ConversationHandler.END
 
 async def custom_points_handler(update: Update, context: CallbackContext):
+    print("custom_points_handler فراخوانی شد")  # لاگ برای دیباگ
+    
     user_id = update.message.from_user.id
     text = update.message.text
     
@@ -725,6 +732,12 @@ async def custom_points_handler(update: Update, context: CallbackContext):
                 [InlineKeyboardButton("لغو خرید", callback_data="cancel_payment")]
             ])
         )
+        
+        # پاک کردن وضعیت دستی
+        if 'state' in context.user_data:
+            del context.user_data['state']
+        
+        print(f"وضعیت کاربر {user_id} به AWAITING_PAYMENT تغییر کرد")  # لاگ برای دیباگ
         return AWAITING_PAYMENT
     
     except ValueError:
@@ -791,17 +804,22 @@ async def show_vip_menu(update: Update, context: CallbackContext):
         await query.edit_message_text(text, reply_markup=reply_markup)
     else:
         await message.reply_text(text, reply_markup=reply_markup)
-        
+
 async def handle_text_messages(update: Update, context: CallbackContext):
     """این تابع پیام‌های متنی را مدیریت می‌کند"""
     user_id = update.message.from_user.id
     text = update.message.text
     
-    print(f"پیام دریافت شد: {text} از کاربر {user_id}")  # اضافه کردن لاگ برای دیباگ
+    print(f"پیام دریافت شد: {text} از کاربر {user_id}")  # لاگ برای دیباگ
     
     # اگر کاربر در حالت انتظار توکن است
     if context.user_data.get('state') == AWAITING_TOKEN:
         await token_received(update, context)
+        return
+    
+    # اگر کاربر در حالت وارد کردن امتیاز دلخواه است
+    if context.user_data.get('state') == CUSTOM_POINTS:
+        await custom_points_handler(update, context)
         return
     
     # اگر پیام با / شروع شده، آن را نادیده بگیر
