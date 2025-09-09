@@ -278,31 +278,47 @@ async def buy_points_handler(update: Update, context: CallbackContext):
     if query:
         await query.answer()
     
-    if query and query.data.startswith("buy_"):
-        amount = int(query.data.split("_")[1])
-        user_id = query.from_user.id
-        
-        # ذخیره درخواست پرداخت
-        context.user_data["pending_payment"] = {
-            "amount": amount,
-            "user_id": user_id
-        }
-        
-        await query.edit_message_text(
-            f"لطفا مبلغ {amount} تومان را به شماره کارت زیر واریز کنید:\n\n"
-            f"شماره کارت: {CARD_NUMBER}\n"
-            f"به نام: {CARD_OWNER}\n\n"
-            f"پس از واریز، فیش پرداخت را ارسال کنید.\n\n"
-            f"⏰ مهلت پرداخت: 15 دقیقه",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("لغو خرید", callback_data="cancel_payment")]
-            ])
-        )
-        return AWAITING_PAYMENT
+    # اگر داده کالبک "buy_points" باشد، منوی خرید امتیاز را نمایش بده
+    if query and query.data == "buy_points":
+        await show_buy_points_menu(update, context)
+        return
     
-    elif query and query.data == "buy_custom":
-        await query.edit_message_text("مقدار امتیاز مورد نظر را وارد کنید:")
-        return CUSTOM_POINTS
+    if query and query.data.startswith("buy_"):
+        # بررسی برای خرید امتیاز دلخواه
+        if query.data == "buy_custom":
+            await query.edit_message_text("مقدار امتیاز مورد نظر را وارد کنید:")
+            return CUSTOM_POINTS
+        
+        # استخراج مقدار عددی از داده کالبک
+        try:
+            amount = int(query.data.split("_")[1])
+            user_id = query.from_user.id
+            
+            # ذخیره درخواست پرداخت
+            context.user_data["pending_payment"] = {
+                "amount": amount,
+                "user_id": user_id
+            }
+            
+            await query.edit_message_text(
+                f"لطفا مبلغ {amount} تومان را به شماره کارت زیر واریز کنید:\n\n"
+                f"شماره کارت: {CARD_NUMBER}\n"
+                f"به نام: {CARD_OWNER}\n\n"
+                f"پس از واریز، فیش پرداخت را ارسال کنید.\n\n"
+                f"⏰ مهلت پرداخت: 15 دقیقه",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("لغو خرید", callback_data="cancel_payment")]
+                ])
+            )
+            return AWAITING_PAYMENT
+        
+        except (IndexError, ValueError):
+            # اگر مقدار عددی معتبر نباشد
+            await query.edit_message_text("خطا در پردازش درخواست. لطفا دوباره تلاش کنید.")
+            return
+
+
+            
 
 async def show_buy_points_menu(update: Update, context: CallbackContext):
     await update.message.reply_text(
