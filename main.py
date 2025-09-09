@@ -70,6 +70,9 @@ async def main():
         app.add_handler(MessageHandler(filters.Regex('^💎 حساب کاربری 💎$'), account_handler))
         app.add_handler(MessageHandler(filters.Regex('^💎 پنل نمایندگی 💎$'), reseller_handler))
         
+        # هندلر مستقیم برای پیام‌های متنی (این بخش اضافه شده)
+        app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text_messages))
+        
         # شروع ربات
         await app.initialize()
         await app.start()

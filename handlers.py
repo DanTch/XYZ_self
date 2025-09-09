@@ -13,22 +13,6 @@ db = Database()
 # حالت‌های مکالمه
 SELECTING_POINTS, AWAITING_PAYMENT, AWAITING_TOKEN, CUSTOM_POINTS = range(4)
 
-# دیکشنری برای ذخیره وضعیت کاربران
-user_states = {}
-
-async def get_user_state(user_id):
-    """دریافت وضعیت کاربر"""
-    return user_states.get(user_id, None)
-
-async def set_user_state(user_id, state):
-    """تنظیم وضعیت کاربر"""
-    user_states[user_id] = state
-
-async def clear_user_state(user_id):
-    """پاک کردن وضعیت کاربر"""
-    if user_id in user_states:
-        del user_states[user_id]
-
 async def start(update: Update, context: CallbackContext):
     user = update.message.from_user
     chat_id = user.id
@@ -354,9 +338,6 @@ async def reseller_handler(update: Update, context: CallbackContext):
     )
     db.conn.commit()
     
-    # تنظیم وضعیت کاربر برای انتظار توکن
-    await set_user_state(chat_id, AWAITING_TOKEN)
-    
     if query:
         await query.edit_message_text(
             "✅ درخواست شما با موفقیت ثبت شد!\n\n"
@@ -371,18 +352,22 @@ async def reseller_handler(update: Update, context: CallbackContext):
             "🔹 توکن باید از @BotFather دریافت شده باشد\n"
             "🔹 پس از ارسال توکن، ساخت پنل شما آغاز می‌شود"
         )
+    
+    # تنظیم وضعیت کاربر برای انتظار توکن
+    context.user_data['state'] = AWAITING_TOKEN
+    
     return AWAITING_TOKEN
 
 async def token_received(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
     
     # بررسی وضعیت کاربر
-    state = await get_user_state(user_id)
+    state = context.user_data.get('state')
     
     # اگر کاربر در حالت انتظار توکن نیست
     if state != AWAITING_TOKEN:
         await update.message.reply_text("درخواست نامعتبر است. لطفاً از منوی اصلی اقدام کنید.")
-        return
+        return ConversationHandler.END
     
     token = update.message.text.strip()
     
@@ -392,10 +377,10 @@ async def token_received(update: Update, context: CallbackContext):
             "❌ توکن وارد شده معتبر نیست!\n\n"
             "لطفاً توکن صحیح را که از @BotFather دریافت کرده‌اید وارد کنید."
         )
-        return
+        return AWAITING_TOKEN
     
     # پاک کردن وضعیت کاربر
-    await clear_user_state(user_id)
+    context.user_data['state'] = None
     
     # ارسال به ادمین
     try:
@@ -467,8 +452,9 @@ async def free_self_handler(update: Update, context: CallbackContext):
     await update.message.reply_text(message, reply_markup=main_menu())
 
 async def cancel_handler(update: Update, context: CallbackContext):
-    user_id = update.message.from_user.id
-    await clear_user_state(user_id)
+    # پاک کردن وضعیت کاربر
+    context.user_data['state'] = None
+    
     await update.message.reply_text("عملیات لغو شد.", reply_markup=main_menu())
     return ConversationHandler.END
 
@@ -503,3 +489,23 @@ async def custom_points_handler(update: Update, context: CallbackContext):
     except ValueError:
         await update.message.reply_text("لطفاً یک عدد معتبر وارد کنید.")
         return CUSTOM_POINTS
+
+# تابع جدید برای مدیریت پیام‌های متنی
+async def handle_text_messages(update: Update, context: CallbackContext):
+    user_id = update.message.from_user.id
+    text = update.message.text
+    
+    # بررسی وضعیت کاربر
+    state = context.user_data.get('state')
+    
+    # اگر کاربر در حالت انتظار توکن است
+    if state == AWAITING_TOKEN:
+        await token_received(update, context)
+        return
+    
+    # اگر پیام با / شروع شده، آن را نادیده بگیر
+    if text.startswith('/'):
+        return
+    
+    # برای پیام‌های متنی دیگر، کاری نکنید
+    return
