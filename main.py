@@ -54,11 +54,11 @@ async def main():
             ],
             states={
                 SELECTING_POINTS: [
-                    CallbackQueryHandler(buy_points_handler, pattern=r'^buy_\d+$'),  # استفاده از r برای رشته خام
+                    CallbackQueryHandler(buy_points_handler, pattern=r'^buy_\d+$'),
                     CallbackQueryHandler(buy_points_handler, pattern='^buy_custom$')
                 ],
                 AWAITING_PAYMENT: [
-                    MessageHandler(filters.PHOTO, payment_received),
+                    # حذف هندلر عکس از اینجا
                     CallbackQueryHandler(cancel_payment_handler, pattern='^cancel_payment$')
                 ],
                 AWAITING_TOKEN: [MessageHandler(filters.TEXT & ~filters.COMMAND, token_received)],
@@ -80,10 +80,14 @@ async def main():
         app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text_messages))
 
         # در main.py، بعد از تعریف ConversationHandler
+        # اضافه کردن هندلر مستقل برای عکس‌ها
+        app.add_handler(MessageHandler(filters.PHOTO, payment_received))
+
         # اضافه کردن هندلر کالبک برای دکمه‌های عددی
         app.add_handler(CallbackQueryHandler(buy_points_handler, pattern=r'^buy_\d+$'))
         app.add_handler(CallbackQueryHandler(buy_points_handler, pattern='^buy_custom$'))
         app.add_handler(CallbackQueryHandler(buy_points_handler, pattern='^buy_points$'))
+        app.add_handler(CommandHandler("debug_payment", debug_payment_status))
         
         # شروع ربات
         await app.initialize()

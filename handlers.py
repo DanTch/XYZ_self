@@ -366,7 +366,7 @@ async def show_buy_points_menu(update: Update, context: CallbackContext):
     
     print("منوی خرید امتیاز نمایش داده شد")  # لاگ برای دیباگ
 
-    
+
 async def payment_received(update: Update, context: CallbackContext):
     print("payment_received فراخوانی شد")  # لاگ برای دیباگ
     
@@ -380,7 +380,7 @@ async def payment_received(update: Update, context: CallbackContext):
     if not payment_data:
         print("هیچ پرداخت در انتظاری وجود ندارد")  # لاگ برای دیباگ
         await update.message.reply_text("شما در حال انتظار پرداخت نیستید. لطفاً از منوی اصلی اقدام کنید.")
-        return ConversationHandler.END
+        return
     
     print(f"پرداخت در انتظار پیدا شد: {payment_data}")  # لاگ برای دیباگ
     
@@ -426,9 +426,19 @@ async def payment_received(update: Update, context: CallbackContext):
             "❌ خطایی در پردازش پرداخت رخ داد\n"
             "لطفاً دوباره تلاش کنید یا با پشتیبانی تماس بگیرید."
         )
-    
-    return ConversationHandler.END
 
+async def debug_payment_status(update: Update, context: CallbackContext):
+    user_id = update.message.from_user.id
+    payment_data = context.user_data.get("pending_payment")
+    
+    if payment_data:
+        await update.message.reply_text(
+            f"وضعیت پرداخت:\n"
+            f"مبلغ: {payment_data['amount']}\n"
+            f"کاربر: {payment_data['user_id']}"
+        )
+    else:
+        await update.message.reply_text("هیچ پرداخت در انتظاری وجود ندارد")
 
 async def cancel_payment_handler(update: Update, context: CallbackContext):
     query = update.callback_query
