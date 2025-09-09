@@ -357,7 +357,7 @@ async def show_buy_points_menu(update: Update, context: CallbackContext):
             InlineKeyboardButton("250 امتیاز (200 تومان)", callback_data="buy_250")
         ],
         [
-            InlineKeyboardButton("خرید امتیاز دلخواه", callback_data="buy_custom")],
+            InlineKeyboardButton("خرید امتیاز دلخواه  😎", callback_data="buy_custom")],
         [
             InlineKeyboardButton("🔙 بازگشت به منوی اصلی", callback_data="back_to_main")
         ]
