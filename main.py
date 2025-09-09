@@ -21,6 +21,13 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
+async def photo_handler(update: Update, context: CallbackContext):
+    print(f"عکس دریافت شد از کاربر {update.message.from_user.id}")
+    print(f"pending_payment: {context.user_data.get('pending_payment')}")
+    await update.message.reply_text("عکس دریافت شد")
+
+app.add_handler(MessageHandler(filters.PHOTO, photo_handler))
+
 async def main():
     try:
         # ایجاد دیتابیس
