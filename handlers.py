@@ -585,16 +585,47 @@ async def custom_points_handler(update: Update, context: CallbackContext):
         await update.message.reply_text("لطفاً یک عدد معتبر وارد کنید.")
         return CUSTOM_POINTS
 
+
+async def main_menu_buttons_handler(update: Update, context: CallbackContext):
+    """این تابع دکمه‌های اصلی منو را مدیریت می‌کند"""
+    text = update.message.text
+    
+    if text == "👻 سلف 𝐕𝐢𝐩 👻":
+        await show_vip_menu(update, context)
+    elif text == "🫠 سلف رایگان 🫠":
+        await free_self_handler(update, context)
+    elif text == "🫠 امتیاز رایگان 🫠":
+        await free_self_handler(update, context)
+    elif text == "💍 خرید امتیاز 💍":
+        await show_buy_points_menu(update, context)
+    elif text == "💎 حساب کاربری 💎":
+        await account_handler(update, context)
+    elif text == "💎 پنل نمایندگی 💎":
+        await reseller_handler(update, context)
+
+async def show_vip_menu(update: Update, context: CallbackContext):
+    """این تابع منوی VIP را نمایش می‌دهد"""
+    keyboard = [
+        [InlineKeyboardButton("سلف چیست 🤖 ?", callback_data="what_is_self")],
+        [InlineKeyboardButton("خرید سلف vip 🔥", callback_data="buy_vip")],
+        [InlineKeyboardButton("🔙 بازگشت به منوی اصلی", callback_data="back_to_main")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await update.message.reply_text(
+        "👻 **منوی سلف VIP**\n\n"
+        "لطفاً یکی از گزینه‌های زیر را انتخاب کنید:",
+        reply_markup=reply_markup
+    )
+    
 # تابع جدید برای مدیریت پیام‌های متنی
 async def handle_text_messages(update: Update, context: CallbackContext):
+    """این تابع پیام‌های متنی را مدیریت می‌کند"""
     user_id = update.message.from_user.id
     text = update.message.text
     
-    # بررسی وضعیت کاربر
-    state = context.user_data.get('state')
-    
     # اگر کاربر در حالت انتظار توکن است
-    if state == AWAITING_TOKEN:
+    if context.user_data.get('state') == AWAITING_TOKEN:
         await token_received(update, context)
         return
     
@@ -602,5 +633,5 @@ async def handle_text_messages(update: Update, context: CallbackContext):
     if text.startswith('/'):
         return
     
-    # برای پیام‌های متنی دیگر، کاری نکنید
-    return
+    # بررسی برای دکمه‌های اصلی
+    await main_menu_buttons_handler(update, context)
