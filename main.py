@@ -11,6 +11,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQu
 from handlers import *
 from admin import *
 from database import Database
+from config import BOT_TOKEN, ADMIN_ID  # وارد کردن متغیرهای مورد نیاز
 
 # تنظیم لاگینگ
 logging.basicConfig(
@@ -44,7 +45,7 @@ async def main():
         app.add_handler(CallbackQueryHandler(admin_new_users, pattern='^admin_new_users$'))
         app.add_handler(CallbackQueryHandler(lambda u, c: u.message.reply_text("منوی اصلی:", reply_markup=main_menu()), pattern='^back_to_main$'))
         
-        # هندلرهای مکالمه
+        # هندلرهای مکالمه با تنظیمات اصلاح شده
         conv_handler = ConversationHandler(
             entry_points=[
                 CallbackQueryHandler(buy_points_handler, pattern='^buy_points$'),
@@ -57,7 +58,7 @@ async def main():
                 CUSTOM_POINTS: [MessageHandler(filters.TEXT & ~filters.COMMAND, custom_points_handler)]
             },
             fallbacks=[CommandHandler('cancel', cancel_handler)],
-            per_message=True
+            per_message=False  # تنظیم برای رفع هشدار
         )
         app.add_handler(conv_handler)
         
@@ -65,9 +66,9 @@ async def main():
         app.add_handler(MessageHandler(filters.Regex('^👻 سلف 𝐕𝐢𝐩 👻$'), vip_handler))
         app.add_handler(MessageHandler(filters.Regex('^🫠 سلف رایگان 🫠$'), free_self_handler))
         app.add_handler(MessageHandler(filters.Regex('^🫠 امتیاز رایگان 🫠$'), free_self_handler))
-        app.add_handler(MessageHandler(filters.Regex('^💍 خرید امتیاز 💍$'), show_buy_points_menu))  # اصلاح شد
+        app.add_handler(MessageHandler(filters.Regex('^💍 خرید امتیاز 💍$'), show_buy_points_menu))
         app.add_handler(MessageHandler(filters.Regex('^💎 حساب کاربری 💎$'), account_handler))
-        app.add_handler(MessageHandler(filters.Regex('^💎 پنل نمایندگی 💎$'), reseller_handler))  # اصلاح شد
+        app.add_handler(MessageHandler(filters.Regex('^💎 پنل نمایندگی 💎$'), reseller_handler))
         
         # شروع ربات
         await app.initialize()
