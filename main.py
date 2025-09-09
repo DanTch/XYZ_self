@@ -55,7 +55,7 @@ async def main():
         conv_handler = ConversationHandler(
             entry_points=[
                 CallbackQueryHandler(buy_points_handler, pattern='^buy_points$'),
-                CallbackQueryHandler(reseller_handler, pattern='^buy_reseller$')
+                CallbackQueryHandler(buy_reseller_panel, pattern='^buy_reseller_panel$')
             ],
             states={
                 SELECTING_POINTS: [
@@ -63,7 +63,6 @@ async def main():
                     CallbackQueryHandler(buy_points_handler, pattern='^buy_custom$')
                 ],
                 AWAITING_PAYMENT: [
-                    # حذف هندلر عکس از اینجا
                     CallbackQueryHandler(cancel_payment_handler, pattern='^cancel_payment$')
                 ],
                 AWAITING_TOKEN: [MessageHandler(filters.TEXT & ~filters.COMMAND, token_received)],
@@ -98,7 +97,12 @@ async def main():
         app.add_handler(CallbackQueryHandler(reseller_what_is, pattern='^what_is_reseller$'))
         app.add_handler(CallbackQueryHandler(buy_reseller_panel, pattern='^buy_reseller_panel$'))
         app.add_handler(CallbackQueryHandler(show_reseller_menu, pattern='^reseller_menu$'))
-        
+
+        # در main.py، بعد از هندلرهای اصلی
+        app.add_handler(CallbackQueryHandler(reseller_what_is, pattern='^what_is_reseller$'))
+        app.add_handler(CallbackQueryHandler(buy_reseller_panel, pattern='^buy_reseller_panel$'))
+        app.add_handler(CallbackQueryHandler(show_reseller_menu, pattern='^reseller_menu$'))
+                
         # شروع ربات
         await app.initialize()
         await app.start()
