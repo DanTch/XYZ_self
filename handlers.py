@@ -95,89 +95,184 @@ async def vip_handler(update: Update, context: CallbackContext):
     
     user = db.get_user(chat_id)
     
-    if user[4] < VIP_POINTS:
+    if query and query.data == "what_is_self":
+        # نمایش توضیحات کامل سلف
+        explanation_text = """
+🤖 **سلف چیست؟**
+
+سلف یک ربات است که بر روی اکانت تلگرام شما قرار میگیرد و قابلیت‌هایی را فراهم می‌کند که کاربران معمولی تلگرام ندارند. با داشتن سلف، شما یک پله از کاربران عادی جلوتر هستید!
+
+📋 **قابلیت‌های پرکاربردی سلف:**
+
+• 🔇 **سکوت دادن در پیوی**: می‌توانید فردی را در پیوی سکوت دهید (بدون بلاک کردن)
+• 💾 **سیو تایم دار**: ذخیره خودکار عکس و فیلم با زمان‌بندی مشخص
+• 🔄 **سیو بعد از پاک**: ذخیره محتوا حتی بعد از پاک شدن در چت
+• 📝 **فهمیدن متن ادیت شده**: مشاهده متن قبل از ویرایش
+• 👁️ **فهمیدن متن پاک شده**: مشاهده پیام‌های حذف شده
+• 😈 **تنظیم دشمن**: فحش خودکار به افراد نامطلوب
+• 😄 **تنظیم دشمنک**: فحش دوستانه به دوستان (برای سرگرمی)
+• ⏰ **ساعت در کنار اسم**: ساعت زنده که هر دقیقه آپدیت می‌شود
+• 📅 **ساعت و تاریخ در بیو**: تاریخ و ساعت زنده در بیوگرافی
+• 💾 **سیو از محدودیت‌ها**: ذخیره از چت‌ها و محتواهای محدود (مثل SCAM)
+
+🌟 **با سلف VIP چه مزایایی دارید؟**
+
+✅ پشتیبانی فعال و 24 ساعته
+✅ کمترین پینگ و تاخیر در اجرای دستورات
+✅ دسترسی به قابلیت‌های انحصاری و پیشرفته
+✅ بدون هیچگونه تبلیغات مزاحم
+✅ به‌روزرسانی رایگان و دائمی
+
+برای بازگشت به منوی اصلی روی دکمه زیر کلیک کنید:
+        """
+        
+        keyboard = [
+            [InlineKeyboardButton("خرید سلف vip 🔥", callback_data="buy_vip")],
+            [InlineKeyboardButton("🔙 بازگشت به منوی اصلی", callback_data="back_to_main")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
         if query:
-            await query.answer("موجودی کافی ندارید!", show_alert=True)
+            await query.edit_message_text(explanation_text, reply_markup=reply_markup)
         else:
-            await message.reply_text("❌ موجودی کافی ندارید!\n\n"
-                                  f"امتیاز مورد نیاز: {VIP_POINTS}\n"
-                                  f"امتیاز شما: {user[4]}\n\n"
-                                  "برای افزایش امتیاز می‌توانید:\n"
-                                  "• از دوستان خود دعوت کنید\n"
-                                  "• امتیاز خریداری کنید")
+            await message.reply_text(explanation_text, reply_markup=reply_markup)
         return
     
-    # نمایش پیام تحلیل و پردازش
-    if query:
-        await query.edit_message_text(
-            "⏳ در حال تحلیل درخواست شما...\n"
-            "لطفاً چند لحظه صبر کنید.",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("لغو", callback_data="cancel_vip_purchase")]
-            ])
+    elif query and query.data == "buy_vip":
+        # بررسی موجودی کاربر
+        if user[4] < VIP_POINTS:
+            insufficient_points_text = f"""
+❌ **موجودی کافی ندارید!**
+
+📊 **وضعیت امتیاز شما:**
+• امتیاز مورد نیاز: {VIP_POINTS} امتیاز
+• امتیاز فعلی شما: {user[4]} امتیاز
+• کمبود: {VIP_POINTS - user[4]} امتیاز
+
+💡 **راه‌های افزایش امتیاز:**
+• از دوستان خود با لینک دعوت دعوت کنید ({REFERRAL_BONUS} امتیاز به از هر نفر)
+• امتیاز خریداری کنید (از بخش خرید امتیاز)
+• در صورت خرید کاربران دعوت شده توسط شما، پاداش دریافت کنید
+
+🔗 **لینک دعوت شما:**
+https://t.me/{context.bot.username}?start={chat_id}
+            """
+            
+            keyboard = [
+                [InlineKeyboardButton("خرید امتیاز 💎", callback_data="buy_points")],
+                [InlineKeyboardButton("🔙 بازگشت به منوی اصلی", callback_data="back_to_main")]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            
+            if query:
+                await query.answer("موجودی کافی ندارید!", show_alert=True)
+                await query.edit_message_text(insufficient_points_text, reply_markup=reply_markup)
+            else:
+                await message.reply_text(insufficient_points_text, reply_markup=reply_markup)
+            return
+        
+        # نمایش پیام پردازش
+        processing_text = """
+⏳ **در حال پردازش درخواست شما...**
+لطفاً چند لحظه صبر کنید، درخواست شما در حال بررسی است.
+        """
+        
+        keyboard = [
+            [InlineKeyboardButton("لغو", callback_data="cancel_vip")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        if query:
+            await query.edit_message_text(processing_text, reply_markup=reply_markup)
+        else:
+            await message.reply_text(processing_text, reply_markup=reply_markup)
+        
+        # شبیه‌سازی پردازش
+        import asyncio
+        await asyncio.sleep(2)
+        
+        # کسر امتیاز و ثبت درخواست
+        db.add_points(chat_id, -VIP_POINTS)
+        db.cursor.execute(
+            "UPDATE users SET vip_purchase_count = vip_purchase_count + 1 WHERE user_id = ?",
+            (chat_id,)
         )
-    else:
-        await message.reply_text(
-            "⏳ در حال تحلیل درخواست شما...\n"
-            "لطفاً چند لحظه صبر کنید.",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("لغو", callback_data="cancel_vip_purchase")]
-            ])
-        )
-    
-    # شبیه‌سازی پردازش
-    import asyncio
-    await asyncio.sleep(2)
-    
-    # کسر امتیاز و ثبت درخواست
-    db.add_points(chat_id, -VIP_POINTS)
-    db.cursor.execute(
-        "UPDATE users SET vip_purchase_count = vip_purchase_count + 1 WHERE user_id = ?",
-        (chat_id,)
-    )
-    db.conn.commit()
-    
-    # ارسال به ادمین
-    try:
-        await context.bot.send_message(
-            ADMIN_ID,
-            f"درخواست سلف VIP جدید:\n\n"
-            f"کاربر: {chat_id}\n"
-            f"یوزرنیم: @{user[3] if user[3] else 'ندارد'}"
-        )
-    except Forbidden:
-        pass
-    
-    # محاسبه پاداش دعوت‌کنندگان
-    bonuses = calculate_referral_bonus(chat_id, VIP_REFERRAL_BONUS, db)
-    for inviter_id, points in bonuses.items():
-        db.add_points(inviter_id, points)
-        inviter = db.get_user(inviter_id)
+        db.conn.commit()
+        
+        # ارسال به ادمین
         try:
-            await context.bot.send_message(
-                inviter_id,
-                f"کاربری که با کد دعوت شما وارد ربات شده بود، اقدام به خرید سلف VIP کرد.\n\n"
-                f"🎁 {points} امتیاز به شما اضافه شد.\n"
-                f"موجودی جدید: {inviter[4] + points}"
-            )
+            admin_message = f"""
+🆕 **درخواست جدید سلف VIP**
+
+👤 **مشخصات کاربر:**
+• آیدی: {chat_id}
+• نام: {user[1]} {user[2]}
+• یوزرنیم: @{user[3] if user[3] else 'ندارد'}
+
+📋 **جزئیات درخواست:**
+• نوع درخواست: سلف VIP
+• امتیاز کسر شده: {VIP_POINTS}
+• زمان درخواست: {datetime.now().strftime('%Y-%m-%d %H:%M')}
+            """
+            await context.bot.send_message(ADMIN_ID, admin_message)
         except Forbidden:
             pass
-    
-    if query:
-        await query.edit_message_text(
-            "✅ درخواست شما با موفقیت ثبت شد!\n\n"
-            "🔹 سلف VIP شما در حال ساخت است\n"
-            "🔹 به زودی با شما تماس خواهیم گرفت\n"
-            "🔹 مدت زمان ساخت: 1-2 ساعت کاری"
-        )
-    else:
-        await message.reply_text(
-            "✅ درخواست شما با موفقیت ثبت شد!\n\n"
-            "🔹 سلف VIP شما در حال ساخت است\n"
-            "🔹 به زودی با شما تماس خواهیم گرفت\n"
-            "🔹 مدت زمان ساخت: 1-2 ساعت کاری"
-        )
+        
+        # محاسبه پاداش دعوت‌کنندگان
+        bonuses = calculate_referral_bonus(chat_id, VIP_REFERRAL_BONUS, db)
+        for inviter_id, points in bonuses.items():
+            db.add_points(inviter_id, points)
+            inviter = db.get_user(inviter_id)
+            
+            # ارسال پیام به دعوت‌کننده
+            try:
+                bonus_message = f"""
+🎉 **تبریک! پاداش دریافت کردید**
 
+کاربری که با کد دعوت شما وارد ربات شده بود، اقدام به خرید سلف VIP کرد!
+
+💰 **جزئیات پاداش:**
+• مبلغ پاداش: {points} امتیاز
+• نوع خرید: سلف VIP
+• موجودی جدید: {inviter[4] + points} امتیاز
+
+🙏 از همراهی شما سپاسگزاریم!
+                """
+                await context.bot.send_message(inviter_id, bonus_message)
+            except Forbidden:
+                pass
+        
+        # پیام تأیید نهایی به کاربر
+        success_text = """
+✅ **درخواست شما با موفقیت ثبت شد!**
+
+🎉 **سلف VIP شما در حال ساخت است**
+
+📋 **اطلاعات تکمیلی:**
+• کد پیگیری: {str(chat_id)[-6:]}
+• زمان ساخت: 1-2 ساعت کاری
+• پشتیبانی: 24 ساعته
+
+🔧 **مراحل بعدی:**
+• به زودی با شما تماس خواهیم گرفت
+• دسترسی‌های سلف برای شما فعال خواهد شد
+• لینک فعالسازی برای شما ارسال می‌شود
+
+🌟 **از انتخاب شما سپاسگزاریم!**
+        """
+        
+        keyboard = [
+            [InlineKeyboardButton("🔙 بازگشت به منوی اصلی", callback_data="back_to_main")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        if query:
+            await query.edit_message_text(success_text, reply_markup=reply_markup)
+        else:
+            await message.reply_text(success_text, reply_markup=reply_markup)
+
+
+            
 async def buy_points_handler(update: Update, context: CallbackContext):
     query = update.callback_query
     if query:
