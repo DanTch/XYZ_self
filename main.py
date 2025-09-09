@@ -21,8 +21,6 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-
-
 async def main():
     try:
         # ایجاد دیتابیس
@@ -36,10 +34,11 @@ async def main():
         app.add_handler(CommandHandler("start", start))
         app.add_handler(CommandHandler("admin", admin_panel))
         app.add_handler(CommandHandler("add_points", add_points_command))
+        app.add_handler(CommandHandler("debug", debug_conversation))
         
         # کالبک‌های اصلی
         app.add_handler(CallbackQueryHandler(vip_handler, pattern='^(what_is_self|buy_vip)$'))
-        app.add_handler(CallbackQueryHandler(buy_points_handler, pattern='^buy_'))
+        app.add_handler(CallbackQueryHandler(buy_points_handler, pattern='^buy_points$'))
         app.add_handler(CallbackQueryHandler(admin_confirm_payment, pattern='^(confirm|reject)_'))
         app.add_handler(CallbackQueryHandler(reseller_handler, pattern='^buy_reseller$'))
         app.add_handler(CallbackQueryHandler(admin_add_points, pattern='^admin_add_points$'))
@@ -68,19 +67,13 @@ async def main():
             ],
             per_message=False,
             name="payment_conversation",
-            persistent=True  # این خط مهم است
+            persistent=True
         )
-
-        # اضافه کردن ConversationHandler با اولویت بالا
         app.add_handler(conv_handler)
-
-        # سپس هندلرهای دیگر
+        
+        # هندلر مستقیم برای پیام‌های متنی
         app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text_messages))
-
-        app.add_handler(CommandHandler("start", start))
-        app.add_handler(CommandHandler("admin", admin_panel))
-        app.add_handler(CommandHandler("debug", debug_conversation))
-
+        
         # شروع ربات
         await app.initialize()
         await app.start()
@@ -101,13 +94,6 @@ async def main():
     except Exception as e:
         logger.error(f"Error in main: {e}")
         raise
-
-async def photo_handler(update: Update, context: CallbackContext):
-    print(f"عکس دریافت شد از کاربر {update.message.from_user.id}")
-    print(f"pending_payment: {context.user_data.get('pending_payment')}")
-    await update.message.reply_text("عکس دریافت شد")
-
-app.add_handler(MessageHandler(filters.PHOTO, photo_handler))
 
 if __name__ == '__main__':
     try:
