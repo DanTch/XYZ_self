@@ -7,6 +7,7 @@ from keyboards import *
 from config import *
 import os
 from utils import format_user_info, calculate_referral_bonus
+from datetime import datetime
 
 db = Database()
 
@@ -188,7 +189,6 @@ https://t.me/{context.bot.username}?start={chat_id}
             await message.reply_text(processing_text, reply_markup=reply_markup)
         
         # شبیه‌سازی پردازش
-        import asyncio
         await asyncio.sleep(2)
         
         # کسر امتیاز و ثبت درخواست
@@ -271,8 +271,6 @@ https://t.me/{context.bot.username}?start={chat_id}
         else:
             await message.reply_text(success_text, reply_markup=reply_markup)
 
-
-            
 async def buy_points_handler(update: Update, context: CallbackContext):
     query = update.callback_query
     if query:
@@ -305,7 +303,7 @@ async def buy_points_handler(update: Update, context: CallbackContext):
             )
             
             print(f"وضعیت کاربر {user_id} به AWAITING_PAYMENT تغییر کرد")  # لاگ برای دیباگ
-            return AWAITING_PAYMENT  # این خط وضعیت را برمی‌گرداند
+            return AWAITING_PAYMENT
             
         except (IndexError, ValueError) as e:
             print(f"خطا در پردازش خرید: {e}")  # لاگ خطا
@@ -315,8 +313,6 @@ async def buy_points_handler(update: Update, context: CallbackContext):
     elif query and query.data == "buy_custom":
         await query.edit_message_text("مقدار امتیاز مورد نظر را وارد کنید:")
         return CUSTOM_POINTS
-
-
 
 async def show_buy_points_menu(update: Update, context: CallbackContext):
     """این تابع منوی خرید امتیاز را نمایش می‌دهد"""
@@ -351,7 +347,6 @@ async def show_buy_points_menu(update: Update, context: CallbackContext):
         await query.edit_message_text(text, reply_markup=reply_markup)
     else:
         await message.reply_text(text, reply_markup=reply_markup)
-        
 
 async def payment_received(update: Update, context: CallbackContext):
     print("payment_received فراخوانی شد")  # لاگ برای دیباگ
@@ -415,8 +410,6 @@ async def payment_received(update: Update, context: CallbackContext):
     
     return ConversationHandler.END
 
-
-
 async def cancel_payment_handler(update: Update, context: CallbackContext):
     query = update.callback_query
     await query.answer()
@@ -437,13 +430,6 @@ async def cancel_payment_handler(update: Update, context: CallbackContext):
     )
     
     return ConversationHandler.END
-
-async def debug_conversation(update: Update, context: CallbackContext):
-    user_id = update.message.from_user.id
-    print(f"وضعیت مکالمه کاربر {user_id}:")
-    print(f"pending_payment: {context.user_data.get('pending_payment')}")
-    print(f"conversation_state: {context.user_data.get('conversation_state')}")
-    await update.message.reply_text("وضعیت مکالمه در کنسول چاپ شد")
 
 async def admin_confirm_payment(update: Update, context: CallbackContext):
     query = update.callback_query
@@ -523,7 +509,6 @@ async def reseller_handler(update: Update, context: CallbackContext):
         )
     
     # شبیه‌سازی پردازش
-    import asyncio
     await asyncio.sleep(2)
     
     # کسر امتیاز و درخواست توکن
@@ -686,7 +671,6 @@ async def custom_points_handler(update: Update, context: CallbackContext):
         await update.message.reply_text("لطفاً یک عدد معتبر وارد کنید.")
         return CUSTOM_POINTS
 
-
 async def main_menu_buttons_handler(update: Update, context: CallbackContext):
     """این تابع دکمه‌های اصلی منو را مدیریت می‌کند"""
     text = update.message.text
@@ -720,8 +704,6 @@ async def main_menu_buttons_handler(update: Update, context: CallbackContext):
             reply_markup=main_menu()
         )
 
-
-
 async def show_vip_menu(update: Update, context: CallbackContext):
     """این تابع منوی VIP را نمایش می‌دهد"""
     if hasattr(update, 'callback_query') and update.callback_query:
@@ -750,9 +732,6 @@ async def show_vip_menu(update: Update, context: CallbackContext):
     else:
         await message.reply_text(text, reply_markup=reply_markup)
 
-
-
-# تابع جدید برای مدیریت پیام‌های متنی
 async def handle_text_messages(update: Update, context: CallbackContext):
     """این تابع پیام‌های متنی را مدیریت می‌کند"""
     user_id = update.message.from_user.id
@@ -771,3 +750,10 @@ async def handle_text_messages(update: Update, context: CallbackContext):
     
     # بررسی برای دکمه‌های اصلی
     await main_menu_buttons_handler(update, context)
+
+async def debug_conversation(update: Update, context: CallbackContext):
+    user_id = update.message.from_user.id
+    print(f"وضعیت مکالمه کاربر {user_id}:")
+    print(f"pending_payment: {context.user_data.get('pending_payment')}")
+    print(f"conversation_state: {context.user_data.get('conversation_state')}")
+    await update.message.reply_text("وضعیت مکالمه در کنسول چاپ شد")
