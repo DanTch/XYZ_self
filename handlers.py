@@ -278,45 +278,35 @@ async def buy_points_handler(update: Update, context: CallbackContext):
     if query:
         await query.answer()
     
-    # اگر داده کالبک "buy_points" باشد، منوی خرید امتیاز را نمایش بده
     if query and query.data == "buy_points":
         await show_buy_points_menu(update, context)
-        return
+        return SELECTING_POINTS  # برگرداندن وضعیت صحیح
     
     if query and query.data.startswith("buy_"):
-        # بررسی برای خرید امتیاز دلخواه
-        if query.data == "buy_custom":
-            await query.edit_message_text("مقدار امتیاز مورد نظر را وارد کنید:")
-            return CUSTOM_POINTS
+        amount = int(query.data.split("_")[1])
+        user_id = query.from_user.id
         
-        # استخراج مقدار عددی از داده کالبک
-        try:
-            amount = int(query.data.split("_")[1])
-            user_id = query.from_user.id
-            
-            # ذخیره درخواست پرداخت
-            context.user_data["pending_payment"] = {
-                "amount": amount,
-                "user_id": user_id
-            }
-            
-            await query.edit_message_text(
-                f"لطفا مبلغ {amount} تومان را به شماره کارت زیر واریز کنید:\n\n"
-                f"شماره کارت: {CARD_NUMBER}\n"
-                f"به نام: {CARD_OWNER}\n\n"
-                f"پس از واریز، فیش پرداخت را ارسال کنید.\n\n"
-                f"⏰ مهلت پرداخت: 15 دقیقه",
-                reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("لغو خرید", callback_data="cancel_payment")]
-                ])
-            )
-            return AWAITING_PAYMENT
+        # ذخیره درخواست پرداخت
+        context.user_data["pending_payment"] = {
+            "amount": amount,
+            "user_id": user_id
+        }
         
-        except (IndexError, ValueError):
-            # اگر مقدار عددی معتبر نباشد
-            await query.edit_message_text("خطا در پردازش درخواست. لطفا دوباره تلاش کنید.")
-            return
-
+        await query.edit_message_text(
+            f"لطفا مبلغ {amount} تومان را به شماره کارت زیر واریز کنید:\n\n"
+            f"شماره کارت: {CARD_NUMBER}\n"
+            f"به نام: {CARD_OWNER}\n\n"
+            f"پس از واریز، فیش پرداخت را ارسال کنید.\n\n"
+            f"⏰ مهلت پرداخت: 15 دقیقه",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("لغو خرید", callback_data="cancel_payment")]
+            ])
+        )
+        return AWAITING_PAYMENT  # برگرداندن وضعیت انتظار پرداخت
+    
+    elif query and query.data == "buy_custom":
+        await query.edit_message_text("مقدار امتیاز مورد نظر را وارد کنید:")
+        return CUSTOM_POINTS
 
 
 
@@ -359,14 +349,26 @@ async def payment_received(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
     photo_file_id = update.message.photo[-1].file_id
     
-    # ذخیره پرداخت در دیتابیس
+    print(f"عکس دریافت شده از کاربر {user_id}")  # لاگ برای دیباگ
+    
+    # بررسی وجود پرداخت در انتظار
     payment_data = context.user_data.get("pending_payment")
-    if payment_data:
+    if not payment_data:
+        print("هیچ پرداخت در انتظاری وجود ندارد")
+        await update.message.reply_text("هیچ پرداخت در انتظاری وجود ندارد. لطفاً از منوی اصلی اقدام کنید.")
+        return ConversationHandler.END
+    
+    print(f"پرداخت در انتظار پیدا شد: {payment_data}")  # لاگ برای دیباگ
+    
+    try:
+        # ذخیره پرداخت در دیتابیس
         db.add_pending_payment(
             payment_data["user_id"],
             payment_data["amount"],
             photo_file_id
         )
+        
+        print("پرداخت در دیتابیس ذخیره شد")  # لاگ برای دیباگ
         
         # ارسال به ادمین برای تأیید
         try:
@@ -381,11 +383,42 @@ async def payment_received(update: Update, context: CallbackContext):
                     [InlineKeyboardButton("رد", callback_data=f"reject_{user_id}")]
                 ])
             )
-        except Forbidden:
-            pass
+            print("پیام به ادمین ارسال شد")  # لاگ برای دیباگ
+        except Exception as e:
+            print(f"خطا در ارسال به ادمین: {e}")  # لاگ خطا
         
-        await update.message.reply_text("فیش پرداخت شما برای تأیید به ادمین ارسال شد.")
+        await update.message.reply_text(
+            "✅ فیش پرداخت شما با موفقیت دریافت شد\n"
+            "پس از بررسی توسط ادمین، امتیازها به حساب شما اضافه خواهد شد."
+        )
+        
+        # پاک کردن پرداخت در انتظار
         del context.user_data["pending_payment"]
+        
+    except Exception as e:
+        print(f"خطا در پردازش پرداخت: {e}")  # لاگ خطا
+        await update.message.reply_text(
+            "❌ خطایی در پردازش پرداخت رخ داد\n"
+            "لطفاً دوباره تلاش کنید یا با پشتیبانی تماس بگیرید."
+        )
+    
+    return ConversationHandler.END
+
+async def cancel_payment_handler(update: Update, context: CallbackContext):
+    query = update.callback_query
+    await query.answer()
+    
+    # پاک کردن پرداخت در انتظار
+    if "pending_payment" in context.user_data:
+        del context.user_data["pending_payment"]
+    
+    await query.edit_message_text(
+        "❌ پرداخت لغو شد\n"
+        "می‌توانید از منوی اصلی اقدامات دیگر را انجام دهید.",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("🔙 بازگشت به منوی اصلی", callback_data="back_to_main")]
+        ])
+    )
     
     return ConversationHandler.END
 

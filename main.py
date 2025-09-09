@@ -53,13 +53,16 @@ async def main():
             ],
             states={
                 SELECTING_POINTS: [CallbackQueryHandler(buy_points_handler, pattern='^buy_')],
-                AWAITING_PAYMENT: [MessageHandler(filters.PHOTO, payment_received)],
+                AWAITING_PAYMENT: [
+                    MessageHandler(filters.PHOTO, payment_received),
+                    CallbackQueryHandler(cancel_payment_handler, pattern='^cancel_payment$')
+                ],
                 AWAITING_TOKEN: [MessageHandler(filters.TEXT & ~filters.COMMAND, token_received)],
                 CUSTOM_POINTS: [MessageHandler(filters.TEXT & ~filters.COMMAND, custom_points_handler)]
             },
             fallbacks=[CommandHandler('cancel', cancel_handler)],
-            per_message=False,  # تنظیم برای رفع هشدار
-            name="payment_conversation"  # نام برای دیباگ
+            per_message=False,
+            name="payment_conversation"
         )
 
         # اضافه کردن ConversationHandler با اولویت بالا
