@@ -11,7 +11,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQu
 from handlers import *
 from admin import *
 from database import Database
-from config import BOT_TOKEN, ADMIN_ID  # وارد کردن متغیرهای مورد نیاز
+from config import BOT_TOKEN  # فقط BOT_TOKEN را وارد کنید
 
 # تنظیم لاگینگ
 logging.basicConfig(

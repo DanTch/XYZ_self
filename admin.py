@@ -4,6 +4,10 @@ from telegram.ext import CallbackContext, CommandHandler, CallbackQueryHandler
 from database import Database
 from keyboards import admin_menu
 
+# تعریف مستقیم متغیر ADMIN_ID به جای import
+# این روش مطمئن‌تر است
+ADMIN_ID = 123456789  # آیدی عددی ادمین را اینجا قرار دهید
+
 db = Database()
 
 async def admin_panel(update: Update, context: CallbackContext):
