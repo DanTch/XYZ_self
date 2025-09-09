@@ -271,7 +271,7 @@ https://t.me/{context.bot.username}?start={chat_id}
         else:
             await message.reply_text(success_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
 
-            
+
 async def buy_points_handler(update: Update, context: CallbackContext):
     query = update.callback_query
     if query:
@@ -307,7 +307,8 @@ async def buy_points_handler(update: Update, context: CallbackContext):
                     f"⏰ مهلت پرداخت: 15 دقیقه",
                     reply_markup=InlineKeyboardMarkup([
                         [InlineKeyboardButton("لغو خرید", callback_data="cancel_payment")]
-                    ])
+                    ]),
+                    parse_mode=ParseMode.HTML
                 )
                 
                 print(f"وضعیت کاربر {user_id} به AWAITING_PAYMENT تغییر کرد")  # لاگ برای دیباگ
@@ -330,7 +331,6 @@ async def buy_points_handler(update: Update, context: CallbackContext):
             await query.edit_message_text("داده کالبک ناشناخته است.")
             return ConversationHandler.END
 
-
 async def show_buy_points_menu(update: Update, context: CallbackContext):
     """این تابع منوی خرید امتیاز را نمایش می‌دهد"""
     # بررسی اینکه آیا از طریق CallbackQuery فراخوانی شده است یا نه
@@ -347,7 +347,8 @@ async def show_buy_points_menu(update: Update, context: CallbackContext):
         [InlineKeyboardButton("10 امتیاز (10 تومان)", callback_data="buy_10")],
         [InlineKeyboardButton("25 امتیاز (25 تومان)", callback_data="buy_25")],
         [InlineKeyboardButton("50 امتیاز (45 تومان)", callback_data="buy_50")],
-        [InlineKeyboardButton("100 امتیاز (85 تومان)", callback_data="buy_100")],
+        [InlineKeyboardButton("100 امتیاز (95 تومان)", callback_data="buy_100")],  # تغییر این خط
+        [InlineKeyboardButton("200 امتیاز (180 تومان)", callback_data="buy_200")],
         [InlineKeyboardButton("250 امتیاز (200 تومان)", callback_data="buy_250")],
         [InlineKeyboardButton("خرید امتیاز دلخواه", callback_data="buy_custom")],
         [InlineKeyboardButton("🔙 بازگشت به منوی اصلی", callback_data="back_to_main")]
