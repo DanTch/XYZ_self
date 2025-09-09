@@ -1,6 +1,7 @@
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import CallbackContext, ConversationHandler, CommandHandler, MessageHandler, CallbackQueryHandler, filters
 from telegram.constants import ParseMode
+from telegram.error import Forbidden
 from database import Database
 from keyboards import *
 from config import *
@@ -45,65 +46,69 @@ async def start(update: Update, context: CallbackContext):
             markup = InlineKeyboardMarkup([
                 [InlineKeyboardButton("Go to chat", url=f"https://t.me/{user.username}")]
             ])
-            await context.bot.send_message(ADMIN_ID, user_details, reply_markup=markup)
-        else:
-            user_details += f"🔥 User ID: [{user.id}](tg://user?id={user.id})"
-            await context.bot.send_message(ADMIN_ID, user_details, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True)
+            try:
+                await context.bot.send_message(ADMIN_ID, user_details, reply_markup=markup)
+            except Forbidden:
+                pass  # ادمین ربات را بلاک کرده
         
         # ارسال پیام به دعوت‌کننده
         if invited_by:
             inviter = db.get_user(invited_by)
             if inviter:
-                await context.bot.send_message(
-                    invited_by,
-                    f"کاربری که با کد دعوت شما وارد ربات شده بود، اقدام به عضویت کرد.\n\n"
-                    f"🎁 3 امتیاز به شما اضافه شد.\n"
-                    f"موجودی جدید: {inviter[4] + REFERRAL_BONUS}"
-                )
+                try:
+                    await context.bot.send_message(
+                        invited_by,
+                        f"کاربری که با کد دعوت شما وارد ربات شده بود، اقدام به عضویت کرد.\n\n"
+                        f"🎁 3 امتیاز به شما اضافه شد.\n"
+                        f"موجودی جدید: {inviter[4] + REFERRAL_BONUS}"
+                    )
+                except Forbidden:
+                    pass  # کاربر ربات را بلاک کرده
     
     # ارسال پیام خوشامدگویی
-    with open(WELCOME_IMAGE_PATH, 'rb') as photo:
-        await update.message.reply_photo(
-            photo,
-            caption=f"به ربات XYZ سلف خوش آمدید\n\n"
-                   f"برای کار کردن با ربات از دستورات زیر استفاده کنید\n\n"
-                   f"Dev : @Danyal_net",
+    try:
+        with open(WELCOME_IMAGE_PATH, 'rb') as photo:
+            await update.message.reply_photo(
+                photo,
+                caption=f"به ربات XYZ سلف خوش آمدید\n\n"
+                       f"برای کار کردن با ربات از دستورات زیر استفاده کنید\n\n"
+                       f"Dev : @Danyal_net",
+                reply_markup=main_menu()
+            )
+    except:
+        await update.message.reply_text(
+            f"به ربات XYZ سلف خوش آمدید\n\n"
+            f"برای کار کردن با ربات از دستورات زیر استفاده کنید\n\n"
+            f"Dev : @Danyal_net",
             reply_markup=main_menu()
         )
 
 async def vip_handler(update: Update, context: CallbackContext):
     query = update.callback_query
-    await query.answer()
+    if query:
+        await query.answer()
+        chat_id = query.from_user.id
+        message = query.message
+    else:
+        chat_id = update.message.from_user.id
+        message = update.message
     
-    if query.data == "what_is_self":
-        await query.edit_message_text(
-            "سلف یک ربات است که بر روی اکانت تلگرام شما قرار میگیرد.\n\n"
-            "قابلیت هایی را دارد که کاربران معمولی تلگرام ندارند.\n\n"
-            "به معنای واقعی شما یک پله از کاربرانی که سلف ندارند جلو تر هستین\n\n"
-            "خلاصه قابلیت های پرکاربردی سلف :\n\n"
-            "• سکوت دادن در پیوی\n"
-            "• سیو (عکس و فیلم....) تایم دار\n"
-            "• سیو (عکس و فیلم....) بعد از پاک شدن در چت\n"
-            "• فهمیدن متن ادیت شده\n"
-            "• فهمیدن متن پاک شده\n"
-            "• تنظیم دشمن\n"
-            "• تنظیم دشمنک\n"
-            "• ساعت در کنار اسم\n"
-            "• ساعت و تاریخ در بیو\n"
-            "• سیو متن و عکس و فایل از جاهایی که سیو یا فوروارد ممنوع است\n\n"
-            "برای بازگشت به منوی اصلی روی دکمه زیر کلیک کنید:",
-            reply_markup=vip_menu()
-        )
+    user = db.get_user(chat_id)
     
-    elif query.data == "buy_vip":
-        user_id = query.from_user.id
-        user = db.get_user(user_id)
-        
-        if user[4] < VIP_POINTS:
+    if user[4] < VIP_POINTS:
+        if query:
             await query.answer("موجودی کافی ندارید!", show_alert=True)
-            return
-        
-        # نمایش پیام تحلیل و پردازش
+        else:
+            await message.reply_text("❌ موجودی کافی ندارید!\n\n"
+                                  f"امتیاز مورد نیاز: {VIP_POINTS}\n"
+                                  f"امتیاز شما: {user[4]}\n\n"
+                                  "برای افزایش امتیاز می‌توانید:\n"
+                                  "• از دوستان خود دعوت کنید\n"
+                                  "• امتیاز خریداری کنید")
+        return
+    
+    # نمایش پیام تحلیل و پردازش
+    if query:
         await query.edit_message_text(
             "⏳ در حال تحلیل درخواست شما...\n"
             "لطفاً چند لحظه صبر کنید.",
@@ -111,40 +116,62 @@ async def vip_handler(update: Update, context: CallbackContext):
                 [InlineKeyboardButton("لغو", callback_data="cancel_vip_purchase")]
             ])
         )
-        
-        # شبیه‌سازی پردازش (در عمل می‌توانید این زمان را تنظیم کنید)
-        import asyncio
-        await asyncio.sleep(2)
-        
-        # کسر امتیاز و ثبت درخواست
-        db.add_points(user_id, -VIP_POINTS)
-        db.cursor.execute(
-            "UPDATE users SET vip_purchase_count = vip_purchase_count + 1 WHERE user_id = ?",
-            (user_id,)
+    else:
+        await message.reply_text(
+            "⏳ در حال تحلیل درخواست شما...\n"
+            "لطفاً چند لحظه صبر کنید.",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("لغو", callback_data="cancel_vip_purchase")]
+            ])
         )
-        db.conn.commit()
-        
-        # ارسال به ادمین
+    
+    # شبیه‌سازی پردازش
+    import asyncio
+    await asyncio.sleep(2)
+    
+    # کسر امتیاز و ثبت درخواست
+    db.add_points(chat_id, -VIP_POINTS)
+    db.cursor.execute(
+        "UPDATE users SET vip_purchase_count = vip_purchase_count + 1 WHERE user_id = ?",
+        (chat_id,)
+    )
+    db.conn.commit()
+    
+    # ارسال به ادمین
+    try:
         await context.bot.send_message(
             ADMIN_ID,
             f"درخواست سلف VIP جدید:\n\n"
-            f"کاربر: {user_id}\n"
+            f"کاربر: {chat_id}\n"
             f"یوزرنیم: @{user[3] if user[3] else 'ندارد'}"
         )
-        
-        # محاسبه پاداش دعوت‌کنندگان
-        bonuses = calculate_referral_bonus(user_id, VIP_REFERRAL_BONUS, db)
-        for inviter_id, points in bonuses.items():
-            db.add_points(inviter_id, points)
-            inviter = db.get_user(inviter_id)
+    except Forbidden:
+        pass
+    
+    # محاسبه پاداش دعوت‌کنندگان
+    bonuses = calculate_referral_bonus(chat_id, VIP_REFERRAL_BONUS, db)
+    for inviter_id, points in bonuses.items():
+        db.add_points(inviter_id, points)
+        inviter = db.get_user(inviter_id)
+        try:
             await context.bot.send_message(
                 inviter_id,
                 f"کاربری که با کد دعوت شما وارد ربات شده بود، اقدام به خرید سلف VIP کرد.\n\n"
                 f"🎁 {points} امتیاز به شما اضافه شد.\n"
                 f"موجودی جدید: {inviter[4] + points}"
             )
-        
+        except Forbidden:
+            pass
+    
+    if query:
         await query.edit_message_text(
+            "✅ درخواست شما با موفقیت ثبت شد!\n\n"
+            "🔹 سلف VIP شما در حال ساخت است\n"
+            "🔹 به زودی با شما تماس خواهیم گرفت\n"
+            "🔹 مدت زمان ساخت: 1-2 ساعت کاری"
+        )
+    else:
+        await message.reply_text(
             "✅ درخواست شما با موفقیت ثبت شد!\n\n"
             "🔹 سلف VIP شما در حال ساخت است\n"
             "🔹 به زودی با شما تماس خواهیم گرفت\n"
@@ -153,9 +180,10 @@ async def vip_handler(update: Update, context: CallbackContext):
 
 async def buy_points_handler(update: Update, context: CallbackContext):
     query = update.callback_query
-    await query.answer()
+    if query:
+        await query.answer()
     
-    if query.data.startswith("buy_"):
+    if query and query.data.startswith("buy_"):
         amount = int(query.data.split("_")[1])
         user_id = query.from_user.id
         
@@ -177,7 +205,7 @@ async def buy_points_handler(update: Update, context: CallbackContext):
         )
         return AWAITING_PAYMENT
     
-    elif query.data == "buy_custom":
+    elif query and query.data == "buy_custom":
         await query.edit_message_text("مقدار امتیاز مورد نظر را وارد کنید:")
         return CUSTOM_POINTS
 
@@ -201,17 +229,20 @@ async def payment_received(update: Update, context: CallbackContext):
         )
         
         # ارسال به ادمین برای تأیید
-        await context.bot.send_photo(
-            ADMIN_ID,
-            photo_file_id,
-            caption=f"درخواست پرداخت جدید\n"
-                   f"کاربر: {user_id}\n"
-                   f"مبلغ: {payment_data['amount']} تومان",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("تأیید", callback_data=f"confirm_{user_id}")],
-                [InlineKeyboardButton("رد", callback_data=f"reject_{user_id}")]
-            ])
-        )
+        try:
+            await context.bot.send_photo(
+                ADMIN_ID,
+                photo_file_id,
+                caption=f"درخواست پرداخت جدید\n"
+                       f"کاربر: {user_id}\n"
+                       f"مبلغ: {payment_data['amount']} تومان",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("تأیید", callback_data=f"confirm_{user_id}")],
+                    [InlineKeyboardButton("رد", callback_data=f"reject_{user_id}")]
+                ])
+            )
+        except Forbidden:
+            pass
         
         await update.message.reply_text("فیش پرداخت شما برای تأیید به ادمین ارسال شد.")
         del context.user_data["pending_payment"]
@@ -220,7 +251,8 @@ async def payment_received(update: Update, context: CallbackContext):
 
 async def admin_confirm_payment(update: Update, context: CallbackContext):
     query = update.callback_query
-    await query.answer()
+    if query:
+        await query.answer()
     
     action, user_id = query.data.split("_")
     user_id = int(user_id)
@@ -236,27 +268,48 @@ async def admin_confirm_payment(update: Update, context: CallbackContext):
             db.add_points(user_id, payment[0])
             db.update_payment_status(payment[0], "confirmed")
             
-            await context.bot.send_message(user_id, "پرداخت شما با موفقیت تأیید شد. امتیازها به حساب شما اضافه گردید.")
-            await query.edit_message_text("پرداخت تأیید شد.")
+            try:
+                await context.bot.send_message(user_id, "پرداخت شما با موفقیت تأیید شد. امتیازها به حساب شما اضافه گردید.")
+            except Forbidden:
+                pass
+            if query:
+                await query.edit_message_text("پرداخت تأیید شد.")
     
     elif action == "reject":
         db.update_payment_status(user_id, "rejected")
-        await context.bot.send_message(user_id, "پرداخت شما رد شد. لطفاً دوباره تلاش کنید.")
-        await query.edit_message_text("پرداخت رد شد.")
+        try:
+            await context.bot.send_message(user_id, "پرداخت شما رد شد. لطفاً دوباره تلاش کنید.")
+        except Forbidden:
+            pass
+        if query:
+            await query.edit_message_text("پرداخت رد شد.")
 
 async def reseller_handler(update: Update, context: CallbackContext):
     query = update.callback_query
-    await query.answer()
+    if query:
+        await query.answer()
+        chat_id = query.from_user.id
+        message = query.message
+    else:
+        chat_id = update.message.from_user.id
+        message = update.message
     
-    if query.data == "buy_reseller":
-        user_id = query.from_user.id
-        user = db.get_user(user_id)
-        
-        if user[4] < RESELLER_POINTS:
+    user = db.get_user(chat_id)
+    
+    if user[4] < RESELLER_POINTS:
+        if query:
             await query.answer("موجودی کافی ندارید!", show_alert=True)
-            return
-        
-        # نمایش پیام تحلیل و پردازش
+        else:
+            await message.reply_text("❌ موجودی کافی ندارید!\n\n"
+                                  f"امتیاز مورد نیاز: {RESELLER_POINTS}\n"
+                                  f"امتیاز شما: {user[4]}\n\n"
+                                  "برای افزایش امتیاز می‌توانید:\n"
+                                  "• از دوستان خود دعوت کنید\n"
+                                  "• امتیاز خریداری کنید")
+        return
+    
+    # نمایش پیام تحلیل و پردازش
+    if query:
         await query.edit_message_text(
             "⏳ در حال تحلیل درخواست شما...\n"
             "لطفاً چند لحظه صبر کنید.",
@@ -264,51 +317,73 @@ async def reseller_handler(update: Update, context: CallbackContext):
                 [InlineKeyboardButton("لغو", callback_data="cancel_reseller_purchase")]
             ])
         )
-        
-        # شبیه‌سازی پردازش
-        import asyncio
-        await asyncio.sleep(2)
-        
-        # کسر امتیاز و درخواست توکن
-        db.add_points(user_id, -RESELLER_POINTS)
-        db.cursor.execute(
-            "UPDATE users SET reseller_purchase_count = reseller_purchase_count + 1 WHERE user_id = ?",
-            (user_id,)
+    else:
+        await message.reply_text(
+            "⏳ در حال تحلیل درخواست شما...\n"
+            "لطفاً چند لحظه صبر کنید.",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("لغو", callback_data="cancel_reseller_purchase")]
+            ])
         )
-        db.conn.commit()
-        
+    
+    # شبیه‌سازی پردازش
+    import asyncio
+    await asyncio.sleep(2)
+    
+    # کسر امتیاز و درخواست توکن
+    db.add_points(chat_id, -RESELLER_POINTS)
+    db.cursor.execute(
+        "UPDATE users SET reseller_purchase_count = reseller_purchase_count + 1 WHERE user_id = ?",
+        (chat_id,)
+    )
+    db.conn.commit()
+    
+    if query:
         await query.edit_message_text(
             "✅ درخواست شما با موفقیت ثبت شد!\n\n"
             "🔹 لطفاً توکن ربات خود را ارسال کنید\n"
             "🔹 توکن باید از @BotFather دریافت شده باشد\n"
             "🔹 پس از ارسال توکن، ساخت پنل شما آغاز می‌شود"
         )
-        return AWAITING_TOKEN
+    else:
+        await message.reply_text(
+            "✅ درخواست شما با موفقیت ثبت شد!\n\n"
+            "🔹 لطفاً توکن ربات خود را ارسال کنید\n"
+            "🔹 توکن باید از @BotFather دریافت شده باشد\n"
+            "🔹 پس از ارسال توکن، ساخت پنل شما آغاز می‌شود"
+        )
+    return AWAITING_TOKEN
 
 async def token_received(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
     token = update.message.text
     
     # ارسال به ادمین
-    await context.bot.send_message(
-        ADMIN_ID,
-        f"درخواست ساخت پنل نمایندگی:\n\n"
-        f"کاربر: {user_id}\n"
-        f"یوزرنیم: @{update.message.from_user.username if update.message.from_user.username else 'ندارد'}\n"
-        f"توکن: {token}"
-    )
+    try:
+        await context.bot.send_message(
+            ADMIN_ID,
+            f"درخواست ساخت پنل نمایندگی:\n\n"
+            f"کاربر: {user_id}\n"
+            f"یوزرنیم: @{update.message.from_user.username if update.message.from_user.username else 'ندارد'}\n"
+            f"توکن: {token}"
+        )
+    except Forbidden:
+        pass
     
     # محاسبه پاداش دعوت‌کنندگان
     bonuses = calculate_referral_bonus(user_id, RESELLER_REFERRAL_BONUS, db)
     for inviter_id, points in bonuses.items():
         db.add_points(inviter_id, points)
         inviter = db.get_user(inviter_id)
-        await context.bot.send_message(
-            inviter_id,
-            f"کاربری که با کد دعوت شما وارد ربات شده بود، اقدام به خرید پنل نمایندگی کرد.\n\n"
-            f"🎁 {points} امتیاز به شما اضافه شد.\n"
-            f"موجودی جدید: {inviter[4] + points}"
-        )
+        try:
+            await context.bot.send_message(
+                inviter_id,
+                f"کاربری که با کد دعوت شما وارد ربات شده بود، اقدام به خرید پنل نمایندگی کرد.\n\n"
+                f"🎁 {points} امتیاز به شما اضافه شد.\n"
+                f"موجودی جدید: {inviter[4] + points}"
+            )
+        except Forbidden:
+            pass
     
     await update.message.reply_text(
         "✅ توکن شما با موفقیت دریافت شد!\n\n"
