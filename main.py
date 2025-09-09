@@ -62,12 +62,8 @@ async def main():
         )
         app.add_handler(conv_handler)
         
-        app.add_handler(MessageHandler(filters.Regex('^👻 سلف 𝐕𝐢𝐩 👻$'), vip_handler))  # این خط را حذف کنید
-        app.add_handler(MessageHandler(filters.Regex('^🫠 سلف رایگان 🫠$'), free_self_handler))  # این خط را حذف کنید
-        app.add_handler(MessageHandler(filters.Regex('^🫠 امتیاز رایگان 🫠$'), free_self_handler))  # این خط را حذف کنید
-        app.add_handler(MessageHandler(filters.Regex('^💍 خرید امتیاز 💍$'), show_buy_points_menu))  # این خط را حذف کنید
-        app.add_handler(MessageHandler(filters.Regex('^💎 حساب کاربری 💎$'), account_handler))  # این خط را حذف کنید
-        app.add_handler(MessageHandler(filters.Regex('^💎 پنل نمایندگی 💎$'), reseller_handler))  # این خط را حذف کنید
+        app.add_handler(CommandHandler("start", start))
+        app.add_handler(CommandHandler("admin", admin_panel))
         
         # هندلر مستقیم برای پیام‌های متنی (این خط را اضافه کنید)
         app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text_messages))      

@@ -591,31 +591,36 @@ async def main_menu_buttons_handler(update: Update, context: CallbackContext):
     text = update.message.text
     user_id = update.message.from_user.id
     
-    print(f"دکمه فشرده شده: {text} توسط کاربر {user_id}")
+    print(f"دکمه فشرده شده: '{text}' توسط کاربر {user_id}")  # لاگ اصلی
     
     if text == "👻 سلف 𝐕𝐢𝐩 👻":
-        print("نمایش منوی VIP")
+        print("در حال نمایش منوی VIP...")
         await show_vip_menu(update, context)
     elif text == "🫠 سلف رایگان 🫠":
-        print("نمایش سلف رایگان")
+        print("در حال نمایش سلف رایگان...")
         await free_self_handler(update, context)
     elif text == "🫠 امتیاز رایگان 🫠":
-        print("نمایش امتیاز رایگان")
+        print("در حال نمایش امتیاز رایگان...")
         await free_self_handler(update, context)
     elif text == "💍 خرید امتیاز 💍":
-        print("نمایش منوی خرید امتیاز")
+        print("در حال نمایش منوی خرید امتیاز...")
         await show_buy_points_menu(update, context)
     elif text == "💎 حساب کاربری 💎":
-        print("نمایش حساب کاربری")
+        print("در حال نمایش حساب کاربری...")
         await account_handler(update, context)
     elif text == "💎 پنل نمایندگی 💎":
-        print("نمایش پنل نمایندگی")
+        print("در حال نمایش پنل نمایندگی...")
         await reseller_handler(update, context)
     else:
-        print(f"دکمه ناشناخته: {text}")
+        print(f"دکمه ناشناخته: '{text}'")
+        # پیام پیش‌فرض برای دکمه‌های ناشناخته
+        await update.message.reply_text(
+            "دکمه ناشناخته است. لطفا از منوی اصلی استفاده کنید.",
+            reply_markup=main_menu()
+        )
 
 
-        
+
 async def show_vip_menu(update: Update, context: CallbackContext):
     """این تابع منوی VIP را نمایش می‌دهد"""
     keyboard = [
@@ -636,6 +641,8 @@ async def handle_text_messages(update: Update, context: CallbackContext):
     """این تابع پیام‌های متنی را مدیریت می‌کند"""
     user_id = update.message.from_user.id
     text = update.message.text
+    
+    print(f"پیام دریافت شد: {text} از کاربر {user_id}")  # اضافه کردن لاگ برای دیباگ
     
     # اگر کاربر در حالت انتظار توکن است
     if context.user_data.get('state') == AWAITING_TOKEN:
