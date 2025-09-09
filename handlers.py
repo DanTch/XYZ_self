@@ -589,20 +589,33 @@ async def custom_points_handler(update: Update, context: CallbackContext):
 async def main_menu_buttons_handler(update: Update, context: CallbackContext):
     """این تابع دکمه‌های اصلی منو را مدیریت می‌کند"""
     text = update.message.text
+    user_id = update.message.from_user.id
+    
+    print(f"دکمه فشرده شده: {text} توسط کاربر {user_id}")
     
     if text == "👻 سلف 𝐕𝐢𝐩 👻":
+        print("نمایش منوی VIP")
         await show_vip_menu(update, context)
     elif text == "🫠 سلف رایگان 🫠":
+        print("نمایش سلف رایگان")
         await free_self_handler(update, context)
     elif text == "🫠 امتیاز رایگان 🫠":
+        print("نمایش امتیاز رایگان")
         await free_self_handler(update, context)
     elif text == "💍 خرید امتیاز 💍":
+        print("نمایش منوی خرید امتیاز")
         await show_buy_points_menu(update, context)
     elif text == "💎 حساب کاربری 💎":
+        print("نمایش حساب کاربری")
         await account_handler(update, context)
     elif text == "💎 پنل نمایندگی 💎":
+        print("نمایش پنل نمایندگی")
         await reseller_handler(update, context)
+    else:
+        print(f"دکمه ناشناخته: {text}")
 
+
+        
 async def show_vip_menu(update: Update, context: CallbackContext):
     """این تابع منوی VIP را نمایش می‌دهد"""
     keyboard = [
@@ -617,7 +630,7 @@ async def show_vip_menu(update: Update, context: CallbackContext):
         "لطفاً یکی از گزینه‌های زیر را انتخاب کنید:",
         reply_markup=reply_markup
     )
-    
+
 # تابع جدید برای مدیریت پیام‌های متنی
 async def handle_text_messages(update: Update, context: CallbackContext):
     """این تابع پیام‌های متنی را مدیریت می‌کند"""
