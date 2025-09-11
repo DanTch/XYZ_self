@@ -204,6 +204,7 @@ https://t.me/{context.bot.username}?start={chat_id}
         # ارسال به ادمین
         try:
             admin_message = f"""
+@Danyal_net
 🆕 <b>درخواست جدید سلف VIP</b>
 
 👤 <b>مشخصات کاربر:</b>
@@ -369,6 +370,7 @@ async def payment_received(update: Update, context: CallbackContext):
                 ADMIN_ID,
                 photo_file_id,
                 caption=f"درخواست پرداخت جدید\n"
+                       f"@Danyal_net"
                        f"کاربر: {user_id}\n"
                        f"مبلغ: {payment_data['amount']} تومان",
                 reply_markup=InlineKeyboardMarkup([
@@ -736,6 +738,7 @@ async def token_received(update: Update, context: CallbackContext):
         # ارسال به ادمین
         try:
             admin_message = f"""
+@Danyal_net
 🆕 <b>درخواست جدید پنل نمایندگی</b>
 
 👤 <b>مشخصات کاربر:</b>
