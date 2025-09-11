@@ -712,7 +712,7 @@ async def token_received(update: Update, context: CallbackContext):
             "❌ توکن وارد شده معتبر نیست!\n\n"
             "لطفاً توکن صحیح را که از @BotFather دریافت کرده‌اید وارد کنید.\n\n"
             "توکن باید:\n"
-            "• با عدد 1 شروع شود\n"
+            "• با عدد شروع شود\n"
             "• حداقل 30 کاراکتر داشته باشد"
         )
         return AWAITING_TOKEN
