@@ -76,7 +76,7 @@ async def main():
                 CommandHandler('cancel', cancel_handler),
                 CallbackQueryHandler(cancel_payment_handler, pattern='^cancel_payment$')
             ],
-            per_message=False,  # تغییر به False
+            per_message=False,
             name="payment_conversation",
             persistent=True
         )

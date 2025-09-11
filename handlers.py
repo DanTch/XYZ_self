@@ -697,6 +697,7 @@ async def token_received(update: Update, context: CallbackContext):
     
     # بررسی وضعیت کاربر
     state = context.user_data.get('state')
+    pending_reseller = context.user_data.get('pending_reseller', False)
     
     # اگر کاربر در حالت انتظار توکن نیست
     if state != AWAITING_TOKEN:
@@ -709,51 +710,185 @@ async def token_received(update: Update, context: CallbackContext):
     if not token.startswith('1') or len(token) < 30:
         await update.message.reply_text(
             "❌ توکن وارد شده معتبر نیست!\n\n"
-            "لطفاً توکن صحیح را که از @BotFather دریافت کرده‌اید وارد کنید."
+            "لطفاً توکن صحیح را که از @BotFather دریافت کرده‌اید وارد کنید.\n\n"
+            "توکن باید:\n"
+            "• با عدد 1 شروع شود\n"
+            "• حداقل 30 کاراکتر داشته باشد"
         )
         return AWAITING_TOKEN
     
     # پاک کردن وضعیت کاربر
     context.user_data['state'] = None
+    is_reseller = context.user_data.pop('pending_reseller', False)
     
-    # ارسال به ادمین
-    try:
-        await context.bot.send_message(
-            ADMIN_ID,
-            f"درخواست ساخت پنل نمایندگی:\n\n"
-            f"کاربر: {user_id}\n"
-            f"یوزرنیم: @{update.message.from_user.username if update.message.from_user.username else 'ندارد'}\n"
-            f"توکن: {token}"
+    if is_reseller:
+        # پردازش خرید پنل نمایندگی
+        user = db.get_user(user_id)
+        
+        # کسر امتیاز و ثبت درخواست
+        db.add_points(user_id, -RESELLER_POINTS)
+        db.cursor.execute(
+            "UPDATE users SET reseller_purchase_count = reseller_purchase_count + 1 WHERE user_id = ?",
+            (user_id,)
         )
-    except Forbidden:
-        pass
-    
-    # محاسبه پاداش دعوت‌کنندگان
-    bonuses = calculate_referral_bonus(user_id, RESELLER_REFERRAL_BONUS, db)
-    for inviter_id, points in bonuses.items():
-        db.add_points(inviter_id, points)
-        inviter = db.get_user(inviter_id)
+        db.conn.commit()
+        
+        # ارسال به ادمین
         try:
-            await context.bot.send_message(
-                inviter_id,
-                f"کاربری که با کد دعوت شما وارد ربات شده بود، اقدام به خرید پنل نمایندگی کرد.\n\n"
-                f"🎁 {points} امتیاز به شما اضافه شد.\n"
-                f"موجودی جدید: {inviter[4] + points}"
-            )
+            admin_message = f"""
+🆕 <b>درخواست جدید پنل نمایندگی</b>
+
+👤 <b>مشخصات کاربر:</b>
+• آیدی: {user_id}
+• نام: {user[1]} {user[2]}
+• یوزرنیم: @{user[3] if user[3] else 'ندارد'}
+
+📋 <b>جزئیات درخواست:</b>
+• نوع درخواست: پنل نمایندگی
+• امتیاز کسر شده: {RESELLER_POINTS}
+• توکن ربات: {token}
+• زمان درخواست: {datetime.now().strftime('%Y-%m-%d %H:%M')}
+            """
+            await context.bot.send_message(ADMIN_ID, admin_message, parse_mode=ParseMode.HTML)
         except Forbidden:
             pass
-    
-    # ارسال پیام تأیید به کاربر
-    await update.message.reply_text(
-        "✅ توکن شما با موفقیت دریافت شد!\n\n"
-        "🔹 پنل نمایندگی شما در حال ساخت است\n"
-        "🔹 به زودی با شما تماس خواهیم گرفت\n"
-        "🔹 مدت زمان ساخت: 24-48 ساعت\n\n"
-        "📋 کد پیگیری شما: " + str(user_id)[-6:]
-    )
+        
+        # محاسبه پاداش دعوت‌کنندگان
+        bonuses = calculate_referral_bonus(user_id, RESELLER_REFERRAL_BONUS, db)
+        for inviter_id, points in bonuses.items():
+            db.add_points(inviter_id, points)
+            inviter = db.get_user(inviter_id)
+            
+            # ارسال پیام به دعوت‌کننده
+            try:
+                bonus_message = f"""
+🎉 <b>تبریک! پاداش دریافت کردید</b>
+
+کاربری که با کد دعوت شما وارد ربات شده بود، اقدام به خرید پنل نمایندگی کرد!
+
+💰 <b>جزئیات پاداش:</b>
+• مبلغ پاداش: {points} امتیاز
+• نوع خرید: پنل نمایندگی
+• موجودی جدید: {inviter[4] + points} امتیاز
+
+🙏 از همراهی شما سپاسگزاریم!
+                """
+                await context.bot.send_message(inviter_id, bonus_message, parse_mode=ParseMode.HTML)
+            except Forbidden:
+                pass
+        
+        # پیام تأیید نهایی به کاربر
+        success_text = f"""
+✅ <b>درخواست شما با موفقیت ثبت شد!</b>
+
+🎉 <b>پنل نمایندگی شما در حال ساخت است</b>
+
+📋 <b>اطلاعات تکمیلی:</b>
+• کد پیگیری: {str(user_id)[-6:]}
+• زمان ساخت: 24-48 ساعت کاری
+• پشتیبانی: 24 ساعته
+
+🔧 <b>مراحل بعدی:</b>
+• به زودی با شما تماس خواهیم گرفت
+• اطلاعات لازم برای راه‌اندازی پنل دریافت می‌شود
+• دسترسی‌های پنل مدیریت برای شما فعال خواهد شد
+• آموزش کامل استفاده از پنل ارائه می‌شود
+
+🌟 <b>از انتخاب شما سپاسگزاریم!</b>
+        """
+        
+        keyboard = [
+            [InlineKeyboardButton("🔙 بازگشت به منوی اصلی", callback_data="back_to_main")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        await update.message.reply_text(success_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+        
+    else:
+        # پردازش خرید سلف VIP (کد قبلی)
+        user = db.get_user(user_id)
+        
+        # کسر امتیاز و ثبت درخواست
+        db.add_points(user_id, -VIP_POINTS)
+        db.cursor.execute(
+            "UPDATE users SET vip_purchase_count = vip_purchase_count + 1 WHERE user_id = ?",
+            (user_id,)
+        )
+        db.conn.commit()
+        
+        # ارسال به ادمین
+        try:
+            admin_message = f"""
+🆕 <b>درخواست جدید سلف VIP</b>
+
+👤 <b>مشخصات کاربر:</b>
+• آیدی: {user_id}
+• نام: {user[1]} {user[2]}
+• یوزرنیم: @{user[3] if user[3] else 'ندارد'}
+
+📋 <b>جزئیات درخواست:</b>
+• نوع درخواست: سلف VIP
+• امتیاز کسر شده: {VIP_POINTS}
+• توکن ربات: {token}
+• زمان درخواست: {datetime.now().strftime('%Y-%m-%d %H:%M')}
+            """
+            await context.bot.send_message(ADMIN_ID, admin_message, parse_mode=ParseMode.HTML)
+        except Forbidden:
+            pass
+        
+        # محاسبه پاداش دعوت‌کنندگان
+        bonuses = calculate_referral_bonus(user_id, VIP_REFERRAL_BONUS, db)
+        for inviter_id, points in bonuses.items():
+            db.add_points(inviter_id, points)
+            inviter = db.get_user(inviter_id)
+            
+            # ارسال پیام به دعوت‌کننده
+            try:
+                bonus_message = f"""
+🎉 <b>تبریک! پاداش دریافت کردید</b>
+
+کاربری که با کد دعوت شما وارد ربات شده بود، اقدام به خرید سلف VIP کرد!
+
+💰 <b>جزئیات پاداش:</b>
+• مبلغ پاداش: {points} امتیاز
+• نوع خرید: سلف VIP
+• موجودی جدید: {inviter[4] + points} امتیاز
+
+🙏 از همراهی شما سپاسگزاریم!
+                """
+                await context.bot.send_message(inviter_id, bonus_message, parse_mode=ParseMode.HTML)
+            except Forbidden:
+                pass
+        
+        # پیام تأیید نهایی به کاربر
+        success_text = f"""
+✅ <b>درخواست شما با موفقیت ثبت شد!</b>
+
+🎉 <b>سلف VIP شما در حال ساخت است</b>
+
+📋 <b>اطلاعات تکمیلی:</b>
+• کد پیگیری: {str(user_id)[-6:]}
+• زمان ساخت: 1-2 ساعت کاری
+• پشتیبانی: 24 ساعته
+
+🔧 <b>مراحل بعدی:</b>
+• به زودی با شما تماس خواهیم گرفت
+• دسترسی‌های سلف برای شما فعال خواهد شد
+• لینک فعالسازی برای شما ارسال می‌شود
+
+🌟 <b>از انتخاب شما سپاسگزاریم!</b>
+        """
+        
+        keyboard = [
+            [InlineKeyboardButton("🔙 بازگشت به منوی اصلی", callback_data="back_to_main")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        await update.message.reply_text(success_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
     
     return ConversationHandler.END
 
+    
 async def account_handler(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
     user = db.get_user(user_id)
