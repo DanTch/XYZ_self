@@ -463,6 +463,7 @@ async def back_to_main_handler(update: Update, context: CallbackContext):
             # اگر آن هم ممکن نبود، به کاربر اطلاع بده
             await query.message.reply_text("خطایی در بازگشت به منوی اصلی رخ داد. لطفاً از دستور /start استفاده کنید.")
 
+            
 async def admin_confirm_payment(update: Update, context: CallbackContext):
     query = update.callback_query
     if query:
@@ -573,7 +574,6 @@ async def show_reseller_menu(update: Update, context: CallbackContext):
         await safe_edit_message_text(query, text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
     else:
         await message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
-
 
 
 # مثال برای reseller_what_is
@@ -922,7 +922,7 @@ async def main_menu_buttons_handler(update: Update, context: CallbackContext):
         await account_handler(update, context)
     elif text == "💎 پنل نمایندگی 💎":
         print("در حال نمایش پنل نمایندگی...")
-        await show_reseller_menu(update, context)
+        await show_reseller_menu(update, context)  # تغییر این خط
     else:
         print(f"دکمه ناشناخته: '{text}'")
         # پیام پیش‌فرض برای دکمه‌های ناشناخته
@@ -930,6 +930,7 @@ async def main_menu_buttons_handler(update: Update, context: CallbackContext):
             "دکمه ناشناخته است. لطفا از منوی اصلی استفاده کنید.",
             reply_markup=main_menu()
         )
+
 
 async def show_vip_menu(update: Update, context: CallbackContext):
     """این تابع منوی VIP را نمایش می‌دهد"""
@@ -1038,15 +1039,14 @@ async def safe_edit_message_text(query, text, reply_markup=None, parse_mode=None
         current_message = query.message
         
         # مقایسه متن و کیبورد فعلی با جدید
-        text_changed = current_message.text != text
-        markup_changed = current_message.reply_markup != reply_markup
+        text_changed = current_message.text != text if current_message.text else True
+        markup_changed = current_message.reply_markup != reply_markup if current_message.reply_markup else True
         
         # فقط در صورت تفاوت، پیام را ویرایش کن
         if text_changed or markup_changed:
             await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=parse_mode)
     except Exception as e:
         print(f"خطا در ویرایش پیام: {e}")
-
 
 
 

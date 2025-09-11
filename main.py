@@ -55,11 +55,10 @@ async def main():
         app.add_handler(CallbackQueryHandler(account_handler, pattern='^account$'))
         app.add_handler(CallbackQueryHandler(reseller_handler, pattern='^reseller$'))
         
-        # در main.py
         conv_handler = ConversationHandler(
             entry_points=[
                 CallbackQueryHandler(buy_points_handler, pattern='^buy_points$'),
-                CallbackQueryHandler(reseller_handler, pattern='^buy_reseller_panel$')
+                CallbackQueryHandler(buy_reseller_panel, pattern='^buy_reseller_panel$')
             ],
             states={
                 SELECTING_POINTS: [
@@ -77,7 +76,7 @@ async def main():
                 CommandHandler('cancel', cancel_handler),
                 CallbackQueryHandler(cancel_payment_handler, pattern='^cancel_payment$')
             ],
-            per_message=True,
+            per_message=False,  # تغییر به False
             name="payment_conversation",
             persistent=True
         )
@@ -98,12 +97,8 @@ async def main():
         app.add_handler(CallbackQueryHandler(buy_points_handler, pattern='^buy_points$'))
         app.add_handler(CommandHandler("debug_payment", debug_payment_status))
 
-        # در main.py، بعد از هندلرهای اصلی
-        app.add_handler(CallbackQueryHandler(reseller_what_is, pattern='^what_is_reseller$'))
-        app.add_handler(CallbackQueryHandler(buy_reseller_panel, pattern='^buy_reseller_panel$'))
-        app.add_handler(CallbackQueryHandler(show_reseller_menu, pattern='^reseller_menu$'))
-
-        # در main.py، بعد از هندلرهای اصلی
+        # در main.py، بعد از تعریف ConversationHandler
+        # اضافه کردن هندلرهای مستقل برای کالبک‌های پنل نمایندگی
         app.add_handler(CallbackQueryHandler(reseller_what_is, pattern='^what_is_reseller$'))
         app.add_handler(CallbackQueryHandler(buy_reseller_panel, pattern='^buy_reseller_panel$'))
         app.add_handler(CallbackQueryHandler(show_reseller_menu, pattern='^reseller_menu$'))
