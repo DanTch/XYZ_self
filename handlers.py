@@ -707,7 +707,7 @@ async def token_received(update: Update, context: CallbackContext):
     token = update.message.text.strip()
     
     # بررسی اعتبار توکن
-    if not token.startswith('1') or len(token) < 30:
+    if len(token) < 30:
         await update.message.reply_text(
             "❌ توکن وارد شده معتبر نیست!\n\n"
             "لطفاً توکن صحیح را که از @BotFather دریافت کرده‌اید وارد کنید.\n\n"
@@ -888,7 +888,7 @@ async def token_received(update: Update, context: CallbackContext):
     
     return ConversationHandler.END
 
-    
+
 async def account_handler(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
     user = db.get_user(user_id)
