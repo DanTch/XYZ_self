@@ -273,6 +273,7 @@ https://t.me/{context.bot.username}?start={chat_id}
         else:
             await message.reply_text(success_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
 
+            
 
 async def buy_points_handler(update: Update, context: CallbackContext):
     query = update.callback_query
