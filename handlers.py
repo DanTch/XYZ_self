@@ -273,7 +273,7 @@ https://t.me/{context.bot.username}?start={chat_id}
         else:
             await message.reply_text(success_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
 
-            
+
 
 async def buy_points_handler(update: Update, context: CallbackContext):
     query = update.callback_query
@@ -484,7 +484,8 @@ async def back_to_main_handler(update: Update, context: CallbackContext):
     
     try:
         # تلاش برای ویرایش پیام فعلی
-        await query.edit_message_text(
+        await safe_edit_message_text(
+            query,
             "منوی اصلی:",
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("👻 سلف 𝐕𝐢𝐩 👻", callback_data="vip_menu")],
@@ -505,7 +506,6 @@ async def back_to_main_handler(update: Update, context: CallbackContext):
             print(f"خطا در ارسال پیام جدید: {e2}")
             # اگر آن هم ممکن نبود، به کاربر اطلاع بده
             await query.message.reply_text("خطایی در بازگشت به منوی اصلی رخ داد. لطفاً از دستور /start استفاده کنید.")
-
 
 async def admin_confirm_payment(update: Update, context: CallbackContext):
     query = update.callback_query
@@ -579,13 +579,15 @@ async def show_reseller_menu(update: Update, context: CallbackContext):
         "لطفاً یکی از گزینه‌های زیر را انتخاب کنید:"
     )
     
+    # اگر از طریق CallbackQuery فراخوانی شده باشد، پیام را ویرایش کن
     if is_callback:
-        await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+        await safe_edit_message_text(query, text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
     else:
         await message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
 
 
 
+# مثال برای reseller_what_is
 async def reseller_what_is(update: Update, context: CallbackContext):
     """این تابع توضیحات پنل نمایندگی را نمایش می‌دهد"""
     query = update.callback_query
@@ -634,8 +636,7 @@ async def reseller_what_is(update: Update, context: CallbackContext):
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    await query.edit_message_text(explanation_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
-
+    await safe_edit_message_text(query, explanation_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
 
 async def buy_reseller_panel(update: Update, context: CallbackContext):
     """این تابع خرید پنل نمایندگی را مدیریت می‌کند"""
@@ -965,9 +966,54 @@ async def show_vip_menu(update: Update, context: CallbackContext):
     )
     
     if is_callback:
-        await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+        await safe_edit_message_text(query, text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
     else:
         await message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+
+async def show_buy_points_menu(update: Update, context: CallbackContext):
+    """این تابع منوی خرید امتیاز را نمایش می‌دهد"""
+    # بررسی اینکه آیا از طریق CallbackQuery فراخوانی شده است یا نه
+    if hasattr(update, 'callback_query') and update.callback_query:
+        query = update.callback_query
+        await query.answer()
+        message = query.message
+        is_callback = True
+    else:
+        message = update.message
+        is_callback = False
+    
+    keyboard = [
+        [
+            InlineKeyboardButton("10 امتیاز (10 تومان)", callback_data="buy_10"),
+            InlineKeyboardButton("25 امتیاز (25 تومان)", callback_data="buy_25")
+        ],
+        [
+            InlineKeyboardButton("50 امتیاز (45 تومان)", callback_data="buy_50"),
+            InlineKeyboardButton("100 امتیاز (95 تومان)", callback_data="buy_100")
+        ],
+        [
+            InlineKeyboardButton("200 امتیاز (180 تومان)", callback_data="buy_200"),
+            InlineKeyboardButton("250 امتیاز (200 تومان)", callback_data="buy_250")
+        ],
+        [
+            InlineKeyboardButton("خرید امتیاز دلخواه", callback_data="buy_custom"),
+            InlineKeyboardButton("🔙 بازگشت به منوی اصلی", callback_data="back_to_main")
+        ]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    text = (
+        "💎 <b>منوی خرید امتیاز</b>\n\n"
+        "لطفاً یکی از گزینه‌های زیر را انتخاب کنید:"
+    )
+    
+    # اگر از طریق CallbackQuery فراخوانی شده باشد، پیام را ویرایش کن
+    if is_callback:
+        await safe_edit_message_text(query, text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+    else:
+        await message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+
+
 
 
 async def handle_text_messages(update: Update, context: CallbackContext):
@@ -993,6 +1039,21 @@ async def handle_text_messages(update: Update, context: CallbackContext):
     
     # بررسی برای دکمه‌های اصلی
     await main_menu_buttons_handler(update, context)
+
+# در handlers.py
+async def safe_edit_message_text(query, text, reply_markup=None, parse_mode=None):
+    """این تابع پیام را فقط در صورت تفاوت ویرایش می‌کند"""
+    try:
+        # اگر پیام فعلی همان متن جدید باشد، از ویرایش صرف نظر کن
+        if query.message.text == text and query.message.reply_markup == reply_markup:
+            return
+        
+        await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=parse_mode)
+    except Exception as e:
+        print(f"خطا در ویرایش پیام: {e}")
+
+
+
 
 async def debug_conversation(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id

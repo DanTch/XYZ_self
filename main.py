@@ -72,12 +72,12 @@ async def main():
                 ],
                 AWAITING_TOKEN: [MessageHandler(filters.TEXT & ~filters.COMMAND, token_received)],
                 CUSTOM_POINTS: [MessageHandler(filters.TEXT & ~filters.COMMAND, custom_points_handler)]
-            },
+            ],
             fallbacks=[
                 CommandHandler('cancel', cancel_handler),
                 CallbackQueryHandler(cancel_payment_handler, pattern='^cancel_payment$')
             ],
-            per_message=True,  # تغییر این مقدار
+            per_message=False,  # تغییر این مقدار
             name="payment_conversation",
             persistent=True
         )
