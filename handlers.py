@@ -248,17 +248,18 @@ https://t.me/{context.bot.username}?start={chat_id}
         success_text = """
 ✅ <b>درخواست شما با موفقیت ثبت شد!</b>
 
-🎉 <b>سلف VIP شما در حال ساخت است</b>
+🎉 <b>پنل نمایندگی شما در حال ساخت است</b>
 
 📋 <b>اطلاعات تکمیلی:</b>
-• کد پیگیری: {str(chat_id)[-6:]}
-• زمان ساخت: 1-2 ساعت کاری
+• کد پیگیری: {str(user_id)[-6:]}
+• زمان ساخت: 24-48 ساعت کاری
 • پشتیبانی: 24 ساعته
 
 🔧 <b>مراحل بعدی:</b>
 • به زودی با شما تماس خواهیم گرفت
-• دسترسی‌های سلف برای شما فعال خواهد شد
-• لینک فعالسازی برای شما ارسال می‌شود
+• اطلاعات لازم برای راه‌اندازی پنل دریافت می‌شود
+• دسترسی‌های پنل مدیریت برای شما فعال خواهد شد
+• آموزش کامل استفاده از پنل ارائه می‌شود
 
 🌟 <b>از انتخاب شما سپاسگزاریم!</b>
         """
@@ -463,7 +464,7 @@ async def back_to_main_handler(update: Update, context: CallbackContext):
             # اگر آن هم ممکن نبود، به کاربر اطلاع بده
             await query.message.reply_text("خطایی در بازگشت به منوی اصلی رخ داد. لطفاً از دستور /start استفاده کنید.")
 
-            
+
 async def admin_confirm_payment(update: Update, context: CallbackContext):
     query = update.callback_query
     if query:
@@ -635,7 +636,7 @@ async def buy_reseller_panel(update: Update, context: CallbackContext):
     user_id = query.from_user.id
     user = db.get_user(user_id)
     
-    # بررسی موجودی کاربر
+    # بررسی مجدد موجودی کاربر
     if user[4] < RESELLER_POINTS:
         insufficient_points_text = f"""
 ❌ <b>موجودی کافی ندارید!</b>
@@ -663,10 +664,17 @@ https://t.me/{context.bot.username}?start={user_id}
         await query.edit_message_text(insufficient_points_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
         return
     
-    # نمایش پیام پردازش
-    processing_text = """
+    # نمایش پیام درخواست توکن
+    token_request_text = """
 ⏳ <b>در حال پردازش درخواست شما...</b>
-لطفاً چند لحظه صبر کنید، درخواست شما در حال بررسی است.
+
+لطفاً توکن ربات خود را ارسال کنید.
+
+🔹 توکن باید از @BotFather دریافت شده باشد
+🔹 توکن باید با عدد 1 شروع شود
+🔹 طول توکن باید حداقل 30 کاراکتر باشد
+
+پس از ارسال توکن، ساخت پنل شما آغاز می‌شود.
     """
     
     keyboard = [
@@ -674,88 +682,14 @@ https://t.me/{context.bot.username}?start={user_id}
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    await query.edit_message_text(processing_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+    await query.edit_message_text(token_request_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
     
-    # شبیه‌سازی پردازش
-    await asyncio.sleep(2)
+    # تنظیم وضعیت کاربر برای انتظار توکن
+    context.user_data['state'] = AWAITING_TOKEN
+    context.user_data['pending_reseller'] = True
     
-    # کسر امتیاز و ثبت درخواست
-    db.add_points(user_id, -RESELLER_POINTS)
-    db.cursor.execute(
-        "UPDATE users SET reseller_purchase_count = reseller_purchase_count + 1 WHERE user_id = ?",
-        (user_id,)
-    )
-    db.conn.commit()
-    
-    # ارسال به ادمین
-    try:
-        admin_message = f"""
-🆕 <b>درخواست جدید پنل نمایندگی</b>
+    return AWAITING_TOKEN
 
-👤 <b>مشخصات کاربر:</b>
-• آیدی: {user_id}
-• نام: {user[1]} {user[2]}
-• یوزرنیم: @{user[3] if user[3] else 'ندارد'}
-
-📋 <b>جزئیات درخواست:</b>
-• نوع درخواست: پنل نمایندگی
-• امتیاز کسر شده: {RESELLER_POINTS}
-• زمان درخواست: {datetime.now().strftime('%Y-%m-%d %H:%M')}
-        """
-        await context.bot.send_message(ADMIN_ID, admin_message, parse_mode=ParseMode.HTML)
-    except Forbidden:
-        pass
-    
-    # محاسبه پاداش دعوت‌کنندگان
-    bonuses = calculate_referral_bonus(user_id, RESELLER_REFERRAL_BONUS, db)
-    for inviter_id, points in bonuses.items():
-        db.add_points(inviter_id, points)
-        inviter = db.get_user(inviter_id)
-        
-        # ارسال پیام به دعوت‌کننده
-        try:
-            bonus_message = f"""
-🎉 <b>تبریک! پاداش دریافت کردید</b>
-
-کاربری که با کد دعوت شما وارد ربات شده بود، اقدام به خرید پنل نمایندگی کرد!
-
-💰 <b>جزئیات پاداش:</b>
-• مبلغ پاداش: {points} امتیاز
-• نوع خرید: پنل نمایندگی
-• موجودی جدید: {inviter[4] + points} امتیاز
-
-🙏 از همراهی شما سپاسگزاریم!
-            """
-            await context.bot.send_message(inviter_id, bonus_message, parse_mode=ParseMode.HTML)
-        except Forbidden:
-            pass
-    
-    # پیام تأیید نهایی به کاربر
-    success_text = """
-✅ <b>درخواست شما با موفقیت ثبت شد!</b>
-
-🎉 <b>پنل نمایندگی شما در حال ساخت است</b>
-
-📋 <b>اطلاعات تکمیلی:</b>
-• کد پیگیری: {str(user_id)[-6:]}
-• زمان ساخت: 24-48 ساعت کاری
-• پشتیبانی: 24 ساعته
-
-🔧 <b>مراحل بعدی:</b>
-• به زودی با شما تماس خواهیم گرفت
-• اطلاعات لازم برای راه‌اندازی پنل دریافت می‌شود
-• دسترسی‌های پنل مدیریت برای شما فعال خواهد شد
-• آموزش کامل استفاده از پنل ارائه می‌شود
-
-🌟 <b>از انتخاب شما سپاسگزاریم!</b>
-    """
-    
-    keyboard = [
-        [InlineKeyboardButton("🔙 بازگشت به منوی اصلی", callback_data="back_to_main")]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    
-    await query.edit_message_text(success_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
 
 
 async def token_received(update: Update, context: CallbackContext):
