@@ -136,7 +136,7 @@ async def vip_handler(update: Update, context: CallbackContext):
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         if query:
-            await query.edit_message_text(explanation_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+            await safe_edit_message_text(query, explanation_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
         else:
             await message.reply_text(explanation_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
         return
@@ -169,7 +169,7 @@ https://t.me/{context.bot.username}?start={chat_id}
             
             if query:
                 await query.answer("موجودی کافی ندارید!", show_alert=True)
-                await query.edit_message_text(insufficient_points_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+                await safe_edit_message_text(query, insufficient_points_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
             else:
                 await message.reply_text(insufficient_points_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
             return
@@ -186,7 +186,7 @@ https://t.me/{context.bot.username}?start={chat_id}
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         if query:
-            await query.edit_message_text(processing_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+            await safe_edit_message_text(query, processing_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
         else:
             await message.reply_text(processing_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
         
@@ -269,10 +269,9 @@ https://t.me/{context.bot.username}?start={chat_id}
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         if query:
-            await query.edit_message_text(success_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+            await safe_edit_message_text(query, success_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
         else:
             await message.reply_text(success_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
-
 
 
 async def buy_points_handler(update: Update, context: CallbackContext):
@@ -334,49 +333,6 @@ async def buy_points_handler(update: Update, context: CallbackContext):
             await query.edit_message_text("داده کالبک ناشناخته است.")
             return ConversationHandler.END
 
-async def show_buy_points_menu(update: Update, context: CallbackContext):
-    """این تابع منوی خرید امتیاز را نمایش می‌دهد"""
-    # بررسی اینکه آیا از طریق CallbackQuery فراخوانی شده است یا نه
-    if hasattr(update, 'callback_query') and update.callback_query:
-        query = update.callback_query
-        await query.answer()
-        message = query.message
-        is_callback = True
-    else:
-        message = update.message
-        is_callback = False
-    
-    keyboard = [
-        [
-            InlineKeyboardButton("10 امتیاز (10 تومان)", callback_data="buy_10"),
-            InlineKeyboardButton("25 امتیاز (25 تومان)", callback_data="buy_25")
-        ],
-        [
-            InlineKeyboardButton("50 امتیاز (45 تومان)", callback_data="buy_50"),
-            InlineKeyboardButton("100 امتیاز (95 تومان)", callback_data="buy_100")
-        ],
-        [
-            InlineKeyboardButton("200 امتیاز (180 تومان)", callback_data="buy_200"),
-            InlineKeyboardButton("250 امتیاز (200 تومان)", callback_data="buy_250")
-        ],
-        [
-            InlineKeyboardButton("خرید امتیاز دلخواه  😎", callback_data="buy_custom")],
-        [
-            InlineKeyboardButton("🔙 بازگشت به منوی اصلی", callback_data="back_to_main")
-        ]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    
-    text = (
-        "💎 <b>منوی خرید امتیاز</b>\n\n"
-        "لطفاً یکی از گزینه‌های زیر را انتخاب کنید:"
-    )
-    
-    # اگر از طریق CallbackQuery فراخوانی شده باشد، پیام را ویرایش کن
-    if is_callback:
-        await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
-    else:
-        await message.reply_text(text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
 
 
 async def payment_received(update: Update, context: CallbackContext):
@@ -552,6 +508,39 @@ async def reseller_handler(update: Update, context: CallbackContext):
     else:
         chat_id = update.message.from_user.id
         message = update.message
+    
+    user = db.get_user(chat_id)
+    
+    if user[4] < RESELLER_POINTS:
+        insufficient_points_text = f"""
+❌ <b>موجودی کافی ندارید!</b>
+
+📊 <b>وضعیت امتیاز شما:</b>
+• امتیاز مورد نیاز: {RESELLER_POINTS} امتیاز
+• امتیاز فعلی شما: {user[4]} امتیاز
+• کمبود: {RESELLER_POINTS - user[4]} امتیاز
+
+💡 <b>راه‌های افزایش امتیاز:</b>
+• از دوستان خود با لینک دعوت دعوت کنید ({REFERRAL_BONUS} امتیاز به از هر نفر)
+• امتیاز خریداری کنید (از بخش خرید امتیاز)
+• در صورت خرید کاربران دعوت شده توسط شما، پاداش دریافت کنید
+
+🔗 <b>لینک دعوت شما:</b>
+https://t.me/{context.bot.username}?start={chat_id}
+        """
+        
+        keyboard = [
+            [InlineKeyboardButton("خرید امتیاز 💎", callback_data="buy_points")],
+            [InlineKeyboardButton("🔙 بازگشت به منوی اصلی", callback_data="back_to_main")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        if query:
+            await query.answer("موجودی کافی ندارید!", show_alert=True)
+            await safe_edit_message_text(query, insufficient_points_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+        else:
+            await message.reply_text(insufficient_points_text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+        return
     
     # نمایش منوی پنل نمایندگی
     await show_reseller_menu(update, context)
@@ -1016,6 +1005,7 @@ async def show_buy_points_menu(update: Update, context: CallbackContext):
 
 
 
+
 async def handle_text_messages(update: Update, context: CallbackContext):
     """این تابع پیام‌های متنی را مدیریت می‌کند"""
     user_id = update.message.from_user.id
@@ -1044,11 +1034,16 @@ async def handle_text_messages(update: Update, context: CallbackContext):
 async def safe_edit_message_text(query, text, reply_markup=None, parse_mode=None):
     """این تابع پیام را فقط در صورت تفاوت ویرایش می‌کند"""
     try:
-        # اگر پیام فعلی همان متن جدید باشد، از ویرایش صرف نظر کن
-        if query.message.text == text and query.message.reply_markup == reply_markup:
-            return
+        # دریافت پیام فعلی
+        current_message = query.message
         
-        await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=parse_mode)
+        # مقایسه متن و کیبورد فعلی با جدید
+        text_changed = current_message.text != text
+        markup_changed = current_message.reply_markup != reply_markup
+        
+        # فقط در صورت تفاوت، پیام را ویرایش کن
+        if text_changed or markup_changed:
+            await query.edit_message_text(text, reply_markup=reply_markup, parse_mode=parse_mode)
     except Exception as e:
         print(f"خطا در ویرایش پیام: {e}")
 
