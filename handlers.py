@@ -1,3 +1,5 @@
+# در ابتدای فایل handlers.py
+import asyncio
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import CallbackContext, ConversationHandler, CommandHandler, MessageHandler, CallbackQueryHandler, filters
 from telegram.constants import ParseMode

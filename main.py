@@ -1,3 +1,4 @@
+# در فایل main.py، بعد از وارد کردن ماژول‌ها
 import logging
 import asyncio
 import sys
@@ -18,6 +19,9 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
+
+# غیرفعال کردن لاگ‌های httpx
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
 
